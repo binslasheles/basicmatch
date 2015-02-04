@@ -104,6 +104,9 @@ Example session:
 #include <fstream>
 #include <iostream>
 #include <list>
+#include "types.h"
+#include "serializer.h"
+#include "engine.h"
 
 typedef std::list<std::string> results_t;
 
@@ -111,6 +114,9 @@ class SimpleCross
 {
 public:
     results_t action(const std::string& line) { return(results_t()); }
+private:
+    Engine engine_;
+    Serializer serializer_;
 };
 
 int main(int argc, char **argv)
