@@ -108,12 +108,18 @@ Example session:
 #include "serializer.h"
 #include "engine.h"
 
-typedef std::list<std::string> results_t;
 
 class SimpleCross
 {
 public:
-    results_t action(const std::string& line) { return(results_t()); }
+    results_t action(const std::string& line)
+    { 
+        order_action_t o;
+        if (!serializer_.deserialize(line, o))
+            return (serializer_.serialize(o));
+
+        return (serializer_.serialize(engine_.execute(o))); 
+    }
 private:
     Engine engine_;
     Serializer serializer_;

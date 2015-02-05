@@ -1,9 +1,16 @@
 #ifndef __SC_TYPES__H__
 #define __SC_TYPES__H__
+#include <list>
+#include <string>
+#include <map>
+#include <queue>
 
-enum class ActionType : uint16_t 
+enum class ActionType : uint8_t 
 {
-    ERR, CANCEL, SUBMIT
+    ERR='E', 
+    CANCEL='X', 
+    SUBMIT='O', 
+    FILL='F'
 };
 
 typedef ActionType action_type_t;
@@ -21,24 +28,62 @@ typedef Side side_t;
 
 struct OrderInfo 
 {
-    side_t side;
-    float price;
-    uint16_t qty;
+    uint32_t id_;
+    const char *symbol_;
+    side_t side_;
+    uint16_t qty_;
+    double price_;
+
+    inline
+    bool price_match(double price)
+    {
+        return (side_ == side_t::BUY) ? price <= price_ : price >= price_;  
+    }
 };
 
 typedef OrderInfo order_info_t;
 
 struct OrderAction
 {
+    OrderAction()=default;
+
+    OrderAction(action_type_t type, const order_info_t&  order_info) 
+        : type_(type), order_info_(order_info) { }  
+
+    explicit OrderAction(char *msg) 
+        : type_(action_type_t::ERR), msg_(msg) { }  
+
     action_type_t type_;
-    uint32_t order_id_;
     union 
     {
         order_info_t order_info_;
-        char msg_[sizeof(order_info_t)];
+        const char *msg_;
     };
 };
 
 typedef OrderAction order_action_t;
+
+struct Book 
+{
+    typedef std::map<double, std::queue<order_info_t>> levels_t;
+    typedef std::pair<levels_t::iterator, levels_t::iterator> sell_range_t;
+    typedef std::pair<levels_t::reverse_iterator, levels_t::reverse_iterator> buy_range_t;
+
+    Book()=default;
+    Book(const std::string& symbol) : symbol_(symbol) { }
+
+    void add_order(const order_info_t& ord);
+
+    buy_range_t buy_range();
+    sell_range_t sell_range();
+
+    std::string symbol_;
+    double sell_min_;
+    double buy_max_;
+    levels_t levels_;
+};
+
+typedef Book book_t;
+typedef std::list<std::string> results_t;
 
 #endif
