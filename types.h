@@ -4,6 +4,8 @@
 #include <string>
 #include <map>
 #include <queue>
+#include <limits>
+#include <iostream>
 
 enum class ActionType : uint8_t 
 {
@@ -37,7 +39,8 @@ struct OrderInfo
     inline
     bool price_match(double price)
     {
-        return (side_ == side_t::BUY) ? price <= price_ : price >= price_;  
+        std::cerr << price << std::endl;
+        return ((side_ == side_t::BUY) ? price <= price_ : price >= price_);  
     }
 };
 
@@ -47,7 +50,7 @@ struct OrderAction
 {
     OrderAction()=default;
 
-    OrderAction(action_type_t type, const order_info_t&  order_info) 
+    OrderAction(action_type_t type, const order_info_t& order_info) 
         : type_(type), order_info_(order_info) { }  
 
     explicit OrderAction(char *msg) 
@@ -65,22 +68,24 @@ typedef OrderAction order_action_t;
 
 struct Book 
 {
-    typedef std::map<double, std::queue<order_info_t>> levels_t;
-    typedef std::pair<levels_t::iterator, levels_t::iterator> sell_range_t;
-    typedef std::pair<levels_t::reverse_iterator, levels_t::reverse_iterator> buy_range_t;
+    //typedef std::map<double, std::queue<order_info_t>> levels_t;
+    ///typedef std::pair<levels_t::iterator, levels_t::iterator> sell_range_t;
+    //typedef std::pair<levels_t::reverse_iterator, levels_t::reverse_iterator> buy_range_t;
 
     Book()=default;
     Book(const std::string& symbol) : symbol_(symbol) { }
 
     void add_order(const order_info_t& ord);
+    void dump();
 
-    buy_range_t buy_range();
-    sell_range_t sell_range();
+    //buy_range_t buy_range();
+    //sell_range_t sell_range();
+
+    void set_min_max();
 
     std::string symbol_;
-    double sell_min_;
-    double buy_max_;
-    levels_t levels_;
+    std::map<double, std::queue<order_info_t>, std::less<double>> sells_;
+    std::map<double, std::queue<order_info_t>, std::greater<double>> buys_;
 };
 
 typedef Book book_t;
