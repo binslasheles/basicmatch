@@ -12,15 +12,14 @@ class Engine
 public:
     std::vector<order_action_t> execute(order_action_t o);
 
-    void dump(std::vector<order_action_t>& info) 
-    { 
-        for(auto& book_pair : books_)
-            book_pair.second.dump(info); 
-    }
-
 private:
     void fill(order_info_t& small, order_info_t& large, 
         std::vector<order_action_t>& results);
+
+    inline book_t& get_book(const char *symbol); 
+
+    inline void handle_cancel(order_info_t&, std::vector<order_action_t>& results);
+    inline void handle_submit(order_info_t&, std::vector<order_action_t>& results);
 
     template<typename Levels>
     void match(order_info_t&, Levels& levels, std::vector<order_action_t>& results);

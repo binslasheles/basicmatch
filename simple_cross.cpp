@@ -131,6 +131,7 @@ public:
             { action_type_t::SUBMIT, {3, "ZNZ4", side_t::BUY, 13, 102.000 }},
             { action_type_t::SUBMIT, {2, "ZNZ4", side_t::BUY, 12, 101.000 }},
             { action_type_t::CANCEL, {999, "", side_t::BUY, 12, 101.000 }},
+            { action_type_t::PRINT, {}},
         };
 
         for(auto& o : v)

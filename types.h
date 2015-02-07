@@ -88,7 +88,6 @@ struct Book
     Book(const std::string& symbol) : symbol_(symbol) { }
 
     void add_order(const order_info_t& ord, std::unordered_map<uint32_t, order_ref_t>& );
-    //void dump();
     void dump(std::vector<order_action_t>& info);
     
     std::string symbol_;
