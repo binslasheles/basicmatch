@@ -1,23 +1,49 @@
 #include "serializer.h"
 #include <stdio.h>
 #include <iterator>
+#include <regex>
 
-void Serializer::set_stream(const std::string& line) 
-{
-    ss_.clear();
-    ss_.str(line);
-}
+
 
 bool Serializer::deserialize(const std::string& line, order_action_t& o) 
 {
     if (line.size())
     {
-        set_stream(line);
+        action_type_t type = *(action_type_t*)line.c_str(); 
+        switch(type)
+        {
+            case action_type_t::SUBMIT:
+            {
+                if( std::regex_match(line, m_, submit_fmt_) && m[5] != "." )
+                {
+                    std::cout << m_[1] << " " << m_[2] << " "  
+                        << m_[3] << " " << m_[4] << " " << m_[5] << std::endl; 
+                }
 
-        //ss >> stype;
-        //action_type_t type = action_type_t(stype);
-        //if (type != action_type_t::SUBMIT || type != action_type_t::ERR || type != action_type_t::CANCEL)
-        //    return (false);
+                //O - place order, requires OID, SYMBOL, SIDE, QTY, PX
+                break;
+            }
+            case action_type_t::CANCEL:
+            {
+                std::smatch m;
+                if (std::regex_match(line, m_, cancel_fmt_))
+                {
+
+                }
+
+                break;
+            }
+            case action_type_t::PRINT:
+            {
+                if (line.size() == 1)
+                    o.type_ = action_type_t::PRINT;
+
+                break;
+            }
+
+            default: break;
+        }
+
         return (true);
     }
 
