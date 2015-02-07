@@ -115,21 +115,22 @@ public:
     results_t action(const std::string& line)
     { 
         std::vector<order_action_t> v{
-            { action_type_t::SUBMIT, {1, "ZNZ4", side_t::BUY, 11, 100.000 }},
-            { action_type_t::SUBMIT, {2, "ZNZ4", side_t::BUY, 12, 101.000 }},
-            { action_type_t::SUBMIT, {3, "ZNZ4", side_t::BUY, 13, 102.000 }},
-            { action_type_t::SUBMIT, {4, "ZNZ4", side_t::BUY, 14, 103.000 }},
-            { action_type_t::SUBMIT, {5, "ZNZ4", side_t::BUY, 15, 104.000 }},
-            { action_type_t::SUBMIT, {6, "ZNZ4", side_t::BUY, 16, 105.000 }},
-            { action_type_t::SUBMIT, {7, "ZNZ4", side_t::BUY, 17, 106.000 }},
+            { action_type_t::SUBMIT, {11, "ZNZ4", side_t::SELL, 11, 100.000 }},
+            { action_type_t::SUBMIT, {12, "ZNZ4", side_t::SELL, 12, 101.000 }},
+            { action_type_t::SUBMIT, {13, "ZNZ4", side_t::SELL, 13, 102.000 }},
+            { action_type_t::SUBMIT, {14, "ZNZ4", side_t::SELL, 14, 103.000 }},
+            { action_type_t::SUBMIT, {15, "ZNZ4", side_t::SELL, 15, 104.000 }},
+            { action_type_t::SUBMIT, {16, "ZNZ4", side_t::SELL, 16, 105.000 }},
+            { action_type_t::SUBMIT, {17, "ZNZ4", side_t::SELL, 17, 106.000 }},
+            { action_type_t::SUBMIT, {18, "ZNZ4", side_t::SELL, 18, 107.000 }},
             { action_type_t::SUBMIT, {8, "ZNZ4", side_t::BUY, 18, 107.000 }},
-            { action_type_t::SUBMIT, {11, "ZNZ4", side_t::SELL, 11, 108.000 }},
-            { action_type_t::SUBMIT, {12, "ZNZ4", side_t::SELL, 12, 109.000 }},
-            { action_type_t::SUBMIT, {13, "ZNZ4", side_t::SELL, 13, 110.000 }},
-            { action_type_t::SUBMIT, {14, "ZNZ4", side_t::SELL, 14, 111.000 }},
-            { action_type_t::SUBMIT, {15, "ZNZ4", side_t::SELL, 15, 112.000 }},
-            { action_type_t::SUBMIT, {16, "ZNZ4", side_t::SELL, 16, 113.000 }},
-            { action_type_t::SUBMIT, {17, "ZNZ4", side_t::SELL, 17, 114.000 }},
+            { action_type_t::SUBMIT, {7, "ZNZ4", side_t::BUY, 17, 106.000 }},
+            { action_type_t::SUBMIT, {6, "ZNZ4", side_t::BUY, 16, 105.000 }},
+            { action_type_t::SUBMIT, {5, "ZNZ4", side_t::BUY, 15, 104.000 }},
+            { action_type_t::SUBMIT, {4, "ZNZ4", side_t::BUY, 14, 103.000 }},
+            { action_type_t::SUBMIT, {3, "ZNZ4", side_t::BUY, 13, 102.000 }},
+            { action_type_t::SUBMIT, {2, "ZNZ4", side_t::BUY, 12, 101.000 }},
+            { action_type_t::SUBMIT, {1, "ZNZ4", side_t::BUY, 11, 100.000 }}
         };
 
         for(auto& o : v)

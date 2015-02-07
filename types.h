@@ -3,7 +3,7 @@
 #include <list>
 #include <string>
 #include <map>
-#include <queue>
+#include <deque>
 #include <limits>
 #include <iostream>
 
@@ -39,7 +39,7 @@ struct OrderInfo
     inline
     bool price_match(double price)
     {
-        std::cerr << price << std::endl;
+        //std::cerr << price << std::endl;
         return ((side_ == side_t::BUY) ? price <= price_ : price >= price_);  
     }
 };
@@ -68,7 +68,7 @@ typedef OrderAction order_action_t;
 
 struct Book 
 {
-    //typedef std::map<double, std::queue<order_info_t>> levels_t;
+    //typedef std::map<double, std::deque<order_info_t>> levels_t;
     ///typedef std::pair<levels_t::iterator, levels_t::iterator> sell_range_t;
     //typedef std::pair<levels_t::reverse_iterator, levels_t::reverse_iterator> buy_range_t;
 
@@ -81,11 +81,9 @@ struct Book
     //buy_range_t buy_range();
     //sell_range_t sell_range();
 
-    void set_min_max();
-
     std::string symbol_;
-    std::map<double, std::queue<order_info_t>, std::less<double>> sells_;
-    std::map<double, std::queue<order_info_t>, std::greater<double>> buys_;
+    std::map<double, std::deque<order_info_t>> sells_;
+    std::map<double, std::deque<order_info_t>, std::greater<double>> buys_;
 };
 
 typedef Book book_t;

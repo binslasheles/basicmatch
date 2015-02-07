@@ -1,27 +1,11 @@
 #include "engine.h"
 #include <iostream>
 
-void Book::set_min_max()
-{
-    if (levels_.empty())
-    {
-        sell_min_ = std::numeric_limits<double>::infinity();
-        buy_max_  = -std::numeric_limits<double>::infinity();
-    }
-    else if(true)
-    {
-
-    }
-    else
-    {
-
-    }
-}
 
 void Book::dump()
 {
     std::cerr << symbol_ << std::endl;
-    for (auto& lp : levels_)
+    for (auto& lp : sells_)
     {
         std::cerr << lp.first << " ";
 
@@ -32,53 +16,79 @@ void Book::dump()
             std::cerr << "\t" << (char)o.side_ << " " << o.id_ << " " 
                     << o.qty_ << "@" << o.price_ << std::endl;;
 
-            q.push(o);
-            lp.second.pop();
+            q.push_back(o);
+            lp.second.pop_front();
         }
 
         while (!q.empty() )
         {
-            lp.second.push(q.front());
-            q.pop();
+            lp.second.push_back(q.front());
+            q.pop_front();
         }
     } 
+
+    for (auto& lp : buys_)
+    {
+        std::cerr << lp.first << " ";
+
+        decltype(lp.second) q;
+        while (!lp.second.empty() )
+        {
+            auto& o = lp.second.front();
+            std::cerr << "\t" << (char)o.side_ << " " << o.id_ << " " 
+                    << o.qty_ << "@" << o.price_ << std::endl;;
+
+            q.push_back(o);
+            lp.second.pop_front();
+        }
+
+        while (!q.empty() )
+        {
+            lp.second.push_back(q.front());
+            q.pop_front();
+        }
+    }
 }
 
 void Book::add_order(const order_info_t& ord)
 { 
-    std::queue<order_info_t>& level = levels_[ord.price_];
-    level.push(ord); 
+    std::deque<order_info_t>& level = (ord.side_ == side_t::BUY) ? buys_[ord.price_] : sells_[ord.price_];
+    level.push_back(ord); 
     level.back().symbol_ = symbol_.c_str(); 
 }
 
 //Book::buy_range_t Book::buy_range() { return (buy_range_t(levels_t::reverse_iterator(levels_.lower_bound(buy_max_)), levels_.rend())); }
 //Book::sell_range_t Book::sell_range() { return (sell_range_t(levels_.lower_bound(sell_min_), levels_.end()));  }
 
-template<typename Range>
-void Engine::match(order_info_t& o, Range range, std::vector<order_action_t>& results)
+template<typename Levels>
+void Engine::match(order_info_t& o, Levels& levels, std::vector<order_action_t>& results)
 {
     //std::cerr << 
-    for (; range.first!=range.second; ++range.first) 
+    auto it=levels.lower_bound(o.price_), end=levels.end();
+    //for (; it!=end; ++it) 
+    while (it!=end) 
     {
-        if (!o.price_match(range.first->first)) //should check buy/sell then do correct comparison
+        if (!o.price_match(it->first)) //should check buy/sell then do correct comparison
             break;
 
-        std::queue<order_info_t>& level = range.first->second; 
+        std::deque<order_info_t>& level = it->second; 
         //while (!level.empty())
         while (true)
         {
             if (level.empty())
             {
-                ;//need to erase this level
+                std::cerr << "here" << std::endl;
+                levels.erase(it++);//need to erase this level
                 break;
             }
 
+            ++it;
             order_info_t& resting = level.front();
 
             if (o.qty_ > resting.qty_) //o partial, resting complete
             {
                 fill(resting, o, results);
-                level.pop();
+                level.pop_front();
             } 
             else if (o.qty_ < resting.qty_) //o complete, resting partial fills
             {
@@ -87,8 +97,9 @@ void Engine::match(order_info_t& o, Range range, std::vector<order_action_t>& re
             }
             else //o complete, resting complete
             {
+                std::cerr << "complete" << std::endl;
                 fill(resting, o, results);
-                level.pop();
+                level.pop_front();
                 break;
             }
         }
@@ -108,9 +119,9 @@ std::vector<order_action_t> Engine::execute(order_action_t action)
 
     std::vector<order_action_t> results;
     if (o.side_ == side_t::BUY)
-        match(o, book.sell_range(), results);
+        match(o, book.sells_, results);
     else
-        match(o, book.buy_range(), results);
+        match(o, book.buys_, results);
     
     if (o.qty_)
         book.add_order(o);
@@ -120,7 +131,8 @@ std::vector<order_action_t> Engine::execute(order_action_t action)
 
 void Engine::fill(order_info_t& small, order_info_t& large, std::vector<order_action_t>& results)
 {
-    std::cerr << "fill" << std::endl;
+    std::cerr << "fill " << small.qty_ << "@" << small.price_ << " -- "
+        << large.qty_ << "@" << large.price_ << std::endl;
 
     uint16_t fill_qty = small.qty_;
     large.qty_ -= fill_qty;

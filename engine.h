@@ -19,8 +19,9 @@ private:
     static void fill(order_info_t& small, order_info_t& large, 
         std::vector<order_action_t>& results);
 
-    template<typename Range>
-    void match(order_info_t&, Range range, std::vector<order_action_t>& results);
+    template<typename Levels>
+    void match(order_info_t&, Levels& levels, std::vector<order_action_t>& results);
+
     std::unordered_set<uint32_t> order_ids_;
     std::unordered_map<std::string, Book> books_;
 };
