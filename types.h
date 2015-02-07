@@ -49,6 +49,14 @@ struct OrderInfo
 
 typedef OrderInfo order_info_t;
 
+struct ErrorInfo
+{
+    uint32_t id_;
+    const char* msg_;
+};
+
+typedef ErrorInfo error_info_t;
+
 struct OrderAction
 {
     OrderAction()=default;
@@ -56,8 +64,8 @@ struct OrderAction
     OrderAction(action_type_t type, const order_info_t& order_info) 
         : type_(type), order_info_(order_info) { }  
 
-    explicit OrderAction(const char *msg) 
-        : type_(action_type_t::ERR), msg_(msg) { }  
+    explicit OrderAction(const char *msg, uint32_t id=0) 
+        : type_(action_type_t::ERR), error_info_{id, msg} { }  
 
     explicit OrderAction(uint32_t id) 
         : type_(action_type_t::CANCEL) { order_info_.id_ = id; }  
@@ -66,7 +74,7 @@ struct OrderAction
     union 
     {
         order_info_t order_info_;
-        const char *msg_;
+        error_info_t error_info_;
     };
 };
 

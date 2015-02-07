@@ -1,4 +1,5 @@
 #include "engine.h"
+#include <assert.h>
 #include <iostream>
 
 void Book::dump(std::vector<order_action_t>& info)
@@ -115,8 +116,6 @@ void Engine::match(order_info_t& o, Levels& levels, std::vector<order_action_t>&
 std::vector<order_action_t> Engine::execute(order_action_t action) 
 {
     order_info_t& o = action.order_info_; 
-    if (orders_.find(o.id_) != orders_.end())
-        return {order_action_t("duplciate order id")};
 
     if (books_.find(o.symbol_) == books_.end())
         books_.emplace(std::piecewise_construct, std::forward_as_tuple(o.symbol_), std::forward_as_tuple(o.symbol_));
@@ -127,39 +126,48 @@ std::vector<order_action_t> Engine::execute(order_action_t action)
     if (action.type_ == action_type_t::CANCEL)
     {
         auto it = orders_.find(o.id_);
-        if (it == orders_.end())
-            results.emplace_back("no order found for id");
-        else if (o.side_ == side_t::BUY)
-            book.buys_[it->second->price_].erase(it->second);
-        else
-            book.sells_[it->second->price_].erase(it->second);
 
-        orders_.erase(it);
-        complete_orders_.insert(o.id_);
-        results.emplace_back(o.id_);
+        if (it == orders_.end())
+            results.emplace_back("no order found for id", o.id_);
+        else
+        {
+            if (o.side_ == side_t::BUY)
+                book.buys_[it->second->price_].erase(it->second);
+            else
+                book.sells_[it->second->price_].erase(it->second);
+
+            orders_.erase(it);
+            complete_orders_.insert(o.id_);
+            results.emplace_back(o.id_);
+        }
     }
     else if (action.type_ == action_type_t::SUBMIT) 
     {
-        if (o.side_ == side_t::BUY)
-            match(o, book.sells_, results);
+        if (orders_.find(o.id_) != orders_.end())
+            results.emplace_back("duplciate order id", o.id_);
         else
-            match(o, book.buys_, results);
-        
-        if (o.qty_)
-            book.add_order(o, orders_);
+        {
+            if (o.side_ == side_t::BUY)
+                match(o, book.sells_, results);
+            else
+                match(o, book.buys_, results);
+            
+            if (o.qty_)
+                book.add_order(o, orders_);
+        }
     }
     else if (action.type_ == action_type_t::PRINT)
-    {
-
-    } 
+       dump(results); 
+    else 
+        assert(0 && "invalid action type in Engine::match");
     
     return (results);
 }
 
 void Engine::fill(order_info_t& small, order_info_t& large, std::vector<order_action_t>& results)
 {
-    std::cerr << "fill " << small.qty_ << "@" << small.price_ << " -- "
-        << large.qty_ << "@" << large.price_ << std::endl;
+//    std::cerr << "fill " << small.qty_ << "@" << small.price_ << " -- "
+//        << large.qty_ << "@" << large.price_ << std::endl;
 
     uint16_t fill_qty = small.qty_;
     large.qty_ -= fill_qty;

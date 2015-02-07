@@ -130,22 +130,26 @@ public:
             { action_type_t::SUBMIT, {4, "ZNZ4", side_t::BUY, 14, 103.000 }},
             { action_type_t::SUBMIT, {3, "ZNZ4", side_t::BUY, 13, 102.000 }},
             { action_type_t::SUBMIT, {2, "ZNZ4", side_t::BUY, 12, 101.000 }},
+            { action_type_t::CANCEL, {999, "", side_t::BUY, 12, 101.000 }},
         };
 
         for(auto& o : v)
         {
-            serializer_.serialize(engine_.execute(o)); 
+            for (auto& s : serializer_.serialize(engine_.execute(o)) )
+            {
+                std::cout << s << std::endl;
+            } 
         }
 
-        std::vector<order_action_t> res;
-        engine_.dump(res);
-        for(auto & a : res)
-        {
-            order_info_t& o = a.order_info_;
-
-            std::cerr << o.price_ << " " << "\t" << (char)o.side_ << " " << o.id_ << " " 
-                    << o.qty_ << "@" << o.price_ << std::endl;;
-        }
+        //std::vector<order_action_t> res;
+        //engine_.dump(res);
+        //for(auto & a : res)
+        //{
+        //    order_info_t& o = a.order_info_;
+//
+//            std::cerr << o.price_ << " " << "\t" << (char)o.side_ << " " << o.id_ << " " 
+//                    << o.qty_ << "@" << o.price_ << std::endl;;
+//        }
 
         return (results_t());
         /*order_action_t o;

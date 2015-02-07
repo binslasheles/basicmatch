@@ -22,10 +22,6 @@ private:
     void fill(order_info_t& small, order_info_t& large, 
         std::vector<order_action_t>& results);
 
-    //void post_process_ord(order_ref_t& ref);
-    //void post_process_ord(uint32_t );
-    
-
     template<typename Levels>
     void match(order_info_t&, Levels& levels, std::vector<order_action_t>& results);
 
