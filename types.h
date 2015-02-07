@@ -3,6 +3,8 @@
 #include <list>
 #include <string>
 #include <map>
+#include <vector>
+#include <unordered_map>
 #include <deque>
 #include <limits>
 #include <iostream>
@@ -12,7 +14,8 @@ enum class ActionType : uint8_t
     ERR='E', 
     CANCEL='X', 
     SUBMIT='O', 
-    FILL='F'
+    FILL='F',
+    PRINT='P'
 };
 
 typedef ActionType action_type_t;
@@ -37,7 +40,7 @@ struct OrderInfo
     double price_;
 
     inline
-    bool price_match(double price)
+    bool crosses(double price)
     {
         //std::cerr << price << std::endl;
         return ((side_ == side_t::BUY) ? price <= price_ : price >= price_);  
@@ -53,8 +56,11 @@ struct OrderAction
     OrderAction(action_type_t type, const order_info_t& order_info) 
         : type_(type), order_info_(order_info) { }  
 
-    explicit OrderAction(char *msg) 
+    explicit OrderAction(const char *msg) 
         : type_(action_type_t::ERR), msg_(msg) { }  
+
+    explicit OrderAction(uint32_t id) 
+        : type_(action_type_t::CANCEL) { order_info_.id_ = id; }  
 
     action_type_t type_;
     union 
@@ -68,19 +74,15 @@ typedef OrderAction order_action_t;
 
 struct Book 
 {
-    //typedef std::map<double, std::deque<order_info_t>> levels_t;
-    ///typedef std::pair<levels_t::iterator, levels_t::iterator> sell_range_t;
-    //typedef std::pair<levels_t::reverse_iterator, levels_t::reverse_iterator> buy_range_t;
+    typedef std::deque<order_info_t>::iterator order_ref_t;
 
     Book()=default;
     Book(const std::string& symbol) : symbol_(symbol) { }
 
-    void add_order(const order_info_t& ord);
-    void dump();
-
-    //buy_range_t buy_range();
-    //sell_range_t sell_range();
-
+    void add_order(const order_info_t& ord, std::unordered_map<uint32_t, order_ref_t>& );
+    //void dump();
+    void dump(std::vector<order_action_t>& info);
+    
     std::string symbol_;
     std::map<double, std::deque<order_info_t>> sells_;
     std::map<double, std::deque<order_info_t>, std::greater<double>> buys_;

@@ -12,9 +12,6 @@ public:
     results_t serialize(const order_action_t& o);
     results_t serialize(const std::vector<order_action_t>& actions);
 
-private:
-    void set_stream(const std::string& line);
-    std::stringstream ss_;
 };
 
 #endif
