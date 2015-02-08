@@ -10,7 +10,7 @@
 class Engine
 {
 public:
-    std::vector<order_action_t> execute(order_action_t o);
+    uint32_t execute(order_action_t o, std::vector<order_action_t>&);
 
 private:
     void fill(order_info_t& small, order_info_t& large, double price,

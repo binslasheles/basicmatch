@@ -11,6 +11,7 @@
 
 enum class ActionType : uint8_t 
 {
+    NONE=0,
     ERR='E', 
     CANCEL='X', 
     SUBMIT='O', 
@@ -89,9 +90,6 @@ struct Book
     inline void remove_sell(order_ref_t& t);
     inline void remove_buy(order_ref_t& t);
 
-    // buy_start(), buy_end()
-    // sell_start(), sell_end()
-    
     std::string symbol_;
     std::map<double, level_t> sells_;
     std::map<double, level_t, std::greater<double>> buys_;

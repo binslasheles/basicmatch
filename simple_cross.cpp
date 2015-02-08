@@ -112,15 +112,23 @@ Example session:
 class SimpleCross
 {
 public:
+    SimpleCross() { results_.reserve(16); }
+
     results_t action(const std::string& line)
     { 
-        order_action_t o;
-        if (!serializer_.deserialize(line, o))
-            return (serializer_.serialize(o));
+        order_action_t a;
+        if (!serializer_.deserialize(line, a))
+            return (serializer_.serialize(a));
 
-        return (serializer_.serialize(engine_.execute(o))); 
+        results_.clear();
+
+        if (engine_.execute(a, results_) > 0)
+            return (serializer_.serialize(results_)); 
+
+        return (results_t());
     }
 private:
+    std::vector<order_action_t> results_;
     Engine engine_;
     Serializer serializer_;
 };
@@ -130,8 +138,8 @@ int main(int argc, char **argv)
     SimpleCross scross;
     std::string line;
 
-    const char* fname = "actions.txt";
-    if( argc > 1 )
+    const char *fname = "actions.txt";
+    if (argc > 1)
         fname = argv[1];
 
     std::ifstream actions(fname, std::ios::in);

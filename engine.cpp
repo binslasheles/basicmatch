@@ -147,10 +147,8 @@ book_t& Engine::get_book(const char *symbol)
     return (books_[symbol]);
 } 
 
-std::vector<order_action_t> Engine::execute(order_action_t action) 
-{
-    std::vector<order_action_t> results;
-    
+uint32_t Engine::execute(order_action_t action, std::vector<order_action_t>& results) 
+{ 
     if (action.type_ == action_type_t::SUBMIT) 
         handle_submit(action.order_info_, results);
     else if (action.type_ == action_type_t::CANCEL)
@@ -165,5 +163,5 @@ std::vector<order_action_t> Engine::execute(order_action_t action)
     else 
         assert(0 && "invalid action type in Engine::match");
 
-    return (results);
+    return (results.size());
 }
