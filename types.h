@@ -34,7 +34,7 @@ typedef Side side_t;
 struct OrderInfo 
 {
     uint32_t id_;
-    const char *symbol_;
+    char symbol_[9];
     side_t side_;
     uint16_t qty_;
     double price_;
@@ -52,7 +52,7 @@ typedef OrderInfo order_info_t;
 struct ErrorInfo
 {
     uint32_t id_;
-    const char* msg_;
+    const char *msg_;
 };
 
 typedef ErrorInfo error_info_t;
@@ -82,24 +82,20 @@ typedef OrderAction order_action_t;
 
 struct Book 
 {
-    typedef std::list<order_info_t>::iterator order_ref_t;
-
-    typedef struct QueuedOrder
-    {
-        QueuedOrder(const order_info_t& ord, level_t& level)
-            : ord_(ord), level_(level) { }
-
-        order_info_t ord_;
-        level_t& level_;
-    } book_order_t;
-
     typedef std::list<order_info_t> level_t;
+    typedef level_t::iterator order_ref_t;
 
     Book()=default;
     Book(const std::string& symbol) : symbol_(symbol) { }
 
     void add_order(const order_info_t& ord, std::unordered_map<uint32_t, order_ref_t>& );
     void dump(std::vector<order_action_t>& info);
+
+    template <typename T>
+    void remove_order(T& levels, order_ref_t& t);
+
+    inline void remove_sell(order_ref_t& t);
+    inline void remove_buy(order_ref_t& t);
     
     std::string symbol_;
     std::map<double, level_t> sells_;

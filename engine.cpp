@@ -5,21 +5,27 @@
 void Book::dump(std::vector<order_action_t>& info)
 {
     for (auto it = sells_.rbegin(); it != sells_.rend(); ++it)
+    {
         for (auto& o : it->second)
+        {
             info.emplace_back(action_type_t::PRINT, o);
+        }
+    }
 
     for (auto& level_pair : buys_)
+    {
         for (auto& o : level_pair.second)
+        {
             info.emplace_back(action_type_t::PRINT, o);
+        }
+    }
 }
 
 void Book::add_order(const order_info_t& ord, std::unordered_map<uint32_t, book_t::order_ref_t>& orders)
 { 
     level_t& level = (ord.side_ == side_t::BUY) ? buys_[ord.price_] : sells_[ord.price_];
     level.push_back(ord); 
-    auto back = --level.end(); 
-    back->symbol_ = symbol_.c_str(); 
-    orders[ord.id_] = back; 
+    orders[ord.id_] = --level.end(); 
 }
 
 template<typename Levels>
@@ -57,6 +63,19 @@ void Engine::match(order_info_t& o, Levels& levels, std::vector<order_action_t>&
     }
 }
 
+template <typename T>
+inline void Book::remove_order(T& levels, order_ref_t& it)
+{
+    typename T::iterator lit = levels.find(it->price_); 
+
+    lit->second.erase(it);
+
+    if (lit->second.empty())
+        levels.erase(lit);
+}
+
+void Book::remove_sell(order_ref_t& it) { remove_order(sells_, it); }
+void Book::remove_buy(order_ref_t& it) { remove_order(buys_, it); }
 
 void Engine::handle_cancel(uint32_t order_id, std::vector<order_action_t>& results)
 {
@@ -71,22 +90,9 @@ void Engine::handle_cancel(uint32_t order_id, std::vector<order_action_t>& resul
         book_t& book = get_book(o.symbol_);
 
         if (o.side_ == side_t::BUY)
-        {
-            auto lit = book.buys_.find(it->second->price_); 
-
-            lit->second.erase(it->second);
-
-            if (lit->second.empty())
-                book.buys_.erase(lit);
-        }
+            book.remove_buy(it->second);
         else
-        {
-            auto lit = book.sells_.find(it->second->price_); 
-            lit->second.erase(it->second);
-
-            if (lit->second.empty())
-                book.sells_.erase(lit);
-        }
+            book.remove_sell(it->second);
 
         orders_.erase(it);
         completed_orders_.insert(order_id);
