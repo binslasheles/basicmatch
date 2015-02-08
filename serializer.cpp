@@ -54,17 +54,17 @@ std::string Serializer::convert(const order_action_t& a)
     char buf[128];
 
     if (a.type_ == action_type_t::ERR)
-        snprintf(buf, sizeof(buf) - 1, "E %u %s", a.error_info_.id_, a.error_info_.msg_);
+        snprintf(buf, sizeof(buf), "E %u %s", a.error_info_.id_, a.error_info_.msg_);
     else
     {
         const order_info_t& o = a.order_info_;
 
         if (a.type_ == action_type_t::FILL)
-            snprintf(buf, sizeof(buf) - 1, "F %u %s %u %7.5lf", o.id_, o.symbol_, o.qty_, o.price_);
+            snprintf(buf, sizeof(buf), "F %u %s %u %7.5lf", o.id_, o.symbol_, o.qty_, o.price_);
         else if (a.type_ == action_type_t::CANCEL)
-            snprintf(buf, sizeof(buf) - 1, "X %u", o.id_);
+            snprintf(buf, sizeof(buf), "X %u", o.id_);
         else if (a.type_ == action_type_t::PRINT)
-            snprintf(buf, sizeof(buf) - 1, "P %u %s %c %u %7.5lf", o.id_, o.symbol_, (char)o.side_, o.qty_, o.price_);
+            snprintf(buf, sizeof(buf), "P %u %s %c %u %7.5lf", o.id_, o.symbol_, (char)o.side_, o.qty_, o.price_);
         else
             assert(0 && "invalid order action type");
     }
