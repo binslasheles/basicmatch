@@ -4,52 +4,48 @@
 
 void Book::dump(std::vector<order_action_t>& info)
 {
-    for(auto it = sells_.rbegin(); it != sells_.rend(); ++it)
-        for(auto& o : it->second)
+    for (auto it = sells_.rbegin(); it != sells_.rend(); ++it)
+        for (auto& o : it->second)
             info.emplace_back(action_type_t::PRINT, o);
 
-    for(auto& level_pair : buys_)
-        for(auto& o : level_pair.second)
+    for (auto& level_pair : buys_)
+        for (auto& o : level_pair.second)
             info.emplace_back(action_type_t::PRINT, o);
 }
 
 void Book::add_order(const order_info_t& ord, std::unordered_map<uint32_t, book_t::order_ref_t>& orders)
 { 
-    std::deque<order_info_t>& level = (ord.side_ == side_t::BUY) ? buys_[ord.price_] : sells_[ord.price_];
+    level_t& level = (ord.side_ == side_t::BUY) ? buys_[ord.price_] : sells_[ord.price_];
     level.push_back(ord); 
-    auto back = level.end() - 1; 
+    auto back = --level.end(); 
     back->symbol_ = symbol_.c_str(); 
     orders[ord.id_] = back; 
 }
 
-//Book::buy_range_t Book::buy_range() { return (buy_range_t(levels_t::reverse_iterator(levels_.lower_bound(buy_max_)), levels_.rend())); }
-//Book::sell_range_t Book::sell_range() { return (sell_range_t(levels_.lower_bound(sell_min_), levels_.end()));  }
-
 template<typename Levels>
 void Engine::match(order_info_t& o, Levels& levels, std::vector<order_action_t>& results)
 {
-    //std::cerr <<  "==== new " << (o.side_ == side_t::BUY ? "BUY" :"SELL" ) << " order ======" << std::endl;
     auto it=levels.begin(), end=levels.end();
-    //for (; it!=end; ++it) 
     while (it!=end) 
     {
-        if (!o.qty_ || !o.crosses(it->first)) //should check buy/sell then do correct comparison
+        double level_price = it->first;
+        if (!o.qty_ || !o.crosses(level_price)) //should check buy/sell then do correct comparison
             break;
 
-        std::deque<order_info_t>& level = it->second; 
-        //while (!level.empty())
+        Book::level_t& level = it->second; 
+
         while (o.qty_)
         {
             order_info_t& resting = level.front();
             if (o.qty_ < resting.qty_) //o complete, resting partial fills
             {
-                fill(o, resting, results);
+                fill(o, resting, level_price, results);
                 return;
             }
 
             //o complete, resting complete
-            //if (o.qty_ > resting.qty_) //o partial, resting complete
-            fill(resting, o, results);
+            //o partial, resting complete
+            fill(resting, o, level_price, results);
             level.pop_front();
 
             if (level.empty())
@@ -62,24 +58,39 @@ void Engine::match(order_info_t& o, Levels& levels, std::vector<order_action_t>&
 }
 
 
-void Engine::handle_cancel(order_info_t& o, std::vector<order_action_t>& results)
+void Engine::handle_cancel(uint32_t order_id, std::vector<order_action_t>& results)
 {
-    auto it = orders_.find(o.id_);
+    auto it = orders_.find(order_id);
 
     if (it == orders_.end())
-        results.emplace_back("no order found for id", o.id_);
+        results.emplace_back("no order found for id", order_id);
     else
     {
+        order_info_t& o = *(it->second);
+
         book_t& book = get_book(o.symbol_);
 
         if (o.side_ == side_t::BUY)
-            book.buys_[it->second->price_].erase(it->second);
+        {
+            auto lit = book.buys_.find(it->second->price_); 
+
+            lit->second.erase(it->second);
+
+            if (lit->second.empty())
+                book.buys_.erase(lit);
+        }
         else
-            book.sells_[it->second->price_].erase(it->second);
+        {
+            auto lit = book.sells_.find(it->second->price_); 
+            lit->second.erase(it->second);
+
+            if (lit->second.empty())
+                book.sells_.erase(lit);
+        }
 
         orders_.erase(it);
-        complete_orders_.insert(o.id_);
-        results.emplace_back(o.id_);
+        completed_orders_.insert(order_id);
+        results.emplace_back(order_id);
     }
 }
 
@@ -87,6 +98,8 @@ void Engine::handle_submit(order_info_t& o, std::vector<order_action_t>& results
 {
     if (orders_.find(o.id_) != orders_.end())
         results.emplace_back("duplciate order id", o.id_);
+    else if (!o.qty_)
+        results.emplace_back("invalid [0] qty for order", o.id_);
     else
     {
         book_t& book = get_book(o.symbol_);
@@ -101,12 +114,31 @@ void Engine::handle_submit(order_info_t& o, std::vector<order_action_t>& results
     }
 }
 
+void Engine::fill(order_info_t& small, order_info_t& large, double fill_price, 
+        std::vector<order_action_t>& results)
+{
+    uint16_t fill_qty = small.qty_;
+    large.qty_ -= fill_qty;
+    small.qty_ = 0;
+
+    results.emplace_back(action_type_t::FILL, small);
+    results.back().order_info_.qty_ = fill_qty;
+    results.back().order_info_.price_ = fill_price;
+
+    results.emplace_back(action_type_t::FILL, large);
+    results.back().order_info_.qty_ = fill_qty;
+    results.back().order_info_.price_ = fill_price;
+
+    orders_.erase(small.id_);
+    completed_orders_.insert(small.id_);
+}
+
 book_t& Engine::get_book(const char *symbol)
 {
     if (books_.find(symbol) == books_.end())
         books_.emplace(std::piecewise_construct, std::forward_as_tuple(symbol), std::forward_as_tuple(symbol));
 
-    return books_[symbol];
+    return (books_[symbol]);
 } 
 
 std::vector<order_action_t> Engine::execute(order_action_t action) 
@@ -116,30 +148,14 @@ std::vector<order_action_t> Engine::execute(order_action_t action)
     if (action.type_ == action_type_t::SUBMIT) 
         handle_submit(action.order_info_, results);
     else if (action.type_ == action_type_t::CANCEL)
-        handle_cancel(action.order_info_, results);
+        handle_cancel(action.order_info_.id_, results);
     else if (action.type_ == action_type_t::PRINT)
     {
-        for(auto& book_pair : books_)
+        for (auto& book_pair : books_)
             book_pair.second.dump(results); 
     }
     else 
         assert(0 && "invalid action type in Engine::match");
 
     return (results);
-}
-
-void Engine::fill(order_info_t& small, order_info_t& large, std::vector<order_action_t>& results)
-{
-    uint16_t fill_qty = small.qty_;
-    large.qty_ -= fill_qty;
-    small.qty_ = 0;
-
-    results.emplace_back(action_type_t::FILL, small);
-    results.back().order_info_.qty_ = fill_qty;
-
-    results.emplace_back(action_type_t::FILL, large);
-    results.back().order_info_.qty_ = fill_qty;
-
-    orders_.erase(small.id_);
-    complete_orders_.insert(small.id_);
 }

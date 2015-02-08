@@ -5,7 +5,7 @@
 #include <map>
 #include <vector>
 #include <unordered_map>
-#include <deque>
+#include <list>
 #include <limits>
 #include <iostream>
 
@@ -82,7 +82,18 @@ typedef OrderAction order_action_t;
 
 struct Book 
 {
-    typedef std::deque<order_info_t>::iterator order_ref_t;
+    typedef std::list<order_info_t>::iterator order_ref_t;
+
+    typedef struct QueuedOrder
+    {
+        QueuedOrder(const order_info_t& ord, level_t& level)
+            : ord_(ord), level_(level) { }
+
+        order_info_t ord_;
+        level_t& level_;
+    } book_order_t;
+
+    typedef std::list<order_info_t> level_t;
 
     Book()=default;
     Book(const std::string& symbol) : symbol_(symbol) { }
@@ -91,8 +102,8 @@ struct Book
     void dump(std::vector<order_action_t>& info);
     
     std::string symbol_;
-    std::map<double, std::deque<order_info_t>> sells_;
-    std::map<double, std::deque<order_info_t>, std::greater<double>> buys_;
+    std::map<double, level_t> sells_;
+    std::map<double, level_t, std::greater<double>> buys_;
 };
 
 typedef Book book_t;

@@ -114,23 +114,26 @@ class SimpleCross
 public:
     results_t action(const std::string& line)
     { 
-        std::vector<order_action_t> v{
-            { action_type_t::SUBMIT, {18, "ZNZ4", side_t::SELL, 10, 107.000 }},
-            { action_type_t::SUBMIT, {17, "ZNZ4", side_t::SELL, 10, 106.000 }},
-            { action_type_t::SUBMIT, {16, "ZNZ4", side_t::SELL, 10, 105.000 }},
-            { action_type_t::SUBMIT, {15, "ZNZ4", side_t::SELL, 10, 104.000 }},
-            { action_type_t::SUBMIT, {11, "ZNZ4", side_t::SELL, 10, 103.000 }},
-            { action_type_t::SUBMIT, {14, "ZNZ4", side_t::SELL, 10, 102.000 }},
-            { action_type_t::SUBMIT, {13, "ZNZ4", side_t::SELL, 10, 101.000 }},
-            { action_type_t::SUBMIT, {12, "ZNZ4", side_t::SELL, 10, 100.000 }},
-            { action_type_t::SUBMIT, {8, "ZNZ4", side_t::BUY, 18, 107.000 }},
-            { action_type_t::SUBMIT, {7, "ZNZ4", side_t::BUY, 17, 106.000 }},
-            { action_type_t::SUBMIT, {6, "ZNZ4", side_t::BUY, 16, 105.000 }},
-            { action_type_t::SUBMIT, {5, "ZNZ4", side_t::BUY, 15, 104.000 }},
-            { action_type_t::SUBMIT, {4, "ZNZ4", side_t::BUY, 14, 103.000 }},
-            { action_type_t::SUBMIT, {3, "ZNZ4", side_t::BUY, 13, 102.000 }},
-            { action_type_t::SUBMIT, {2, "ZNZ4", side_t::BUY, 12, 101.000 }},
-            { action_type_t::CANCEL, {999, "", side_t::BUY, 12, 101.000 }},
+        /*std::vector<order_action_t> v{
+            { action_type_t::SUBMIT, {18, "ZNZ4", side_t::SELL, 1, 107.000 }},
+            { action_type_t::SUBMIT, {17, "ZNZ4", side_t::SELL, 1, 106.000 }},
+            { action_type_t::SUBMIT, {16, "ZNZ4", side_t::SELL, 1, 105.000 }},
+            { action_type_t::SUBMIT, {15, "ZNZ4", side_t::SELL, 1, 104.000 }},
+            { action_type_t::SUBMIT, {11, "ZNZ4", side_t::SELL, 1, 103.000 }},
+            { action_type_t::SUBMIT, {14, "ZNZ4", side_t::SELL, 1, 102.000 }},
+            { action_type_t::SUBMIT, {13, "ZNZ4", side_t::SELL, 1, 101.000 }},
+            { action_type_t::SUBMIT, {12, "ZNZ4", side_t::SELL, 1, 100.000 }},
+            { action_type_t::SUBMIT, {8, "ZNZ4", side_t::BUY, 10, 107.000 }},
+            //{ action_type_t::SUBMIT, {7, "ZNZ4", side_t::BUY, 17, 106.000 }},
+            //{ action_type_t::SUBMIT, {6, "ZNZ4", side_t::BUY, 16, 105.000 }},
+            //{ action_type_t::SUBMIT, {5, "ZNZ4", side_t::BUY, 15, 104.000 }},
+            //{ action_type_t::SUBMIT, {4, "ZNZ4", side_t::BUY, 14, 103.000 }},
+            //{ action_type_t::SUBMIT, {3, "ZNZ4", side_t::BUY, 13, 102.000 }},
+            //{ action_type_t::SUBMIT, {2, "ZNZ4", side_t::BUY, 12, 101.000 }},
+            //{ action_type_t::CANCEL, {999, "ZNZ4"}},
+            //{ action_type_t::CANCEL, {2, "ZNZ4"}},
+            //{ action_type_t::CANCEL, {3, "ZNZ4"}},
+            //{ action_type_t::CANCEL, {4, "ZNZ4"}},
             { action_type_t::PRINT, {}},
         };
 
@@ -142,23 +145,13 @@ public:
             } 
         }
 
-        //std::vector<order_action_t> res;
-        //engine_.dump(res);
-        //for(auto & a : res)
-        //{
-        //    order_info_t& o = a.order_info_;
-//
-//            std::cerr << o.price_ << " " << "\t" << (char)o.side_ << " " << o.id_ << " " 
-//                    << o.qty_ << "@" << o.price_ << std::endl;;
-//        }
-
-        return (results_t());
-        /*order_action_t o;
+        return (results_t());*/
+        order_action_t o;
         if (!serializer_.deserialize(line, o))
             return (serializer_.serialize(o));
 
         return (serializer_.serialize(engine_.execute(o))); 
-        */
+        
     }
 private:
     Engine engine_;
@@ -169,15 +162,18 @@ int main(int argc, char **argv)
 {
     SimpleCross scross;
     std::string line;
-    std::ifstream actions("actions.txt", std::ios::in);
-    results_t results = scross.action(line);
+    const char* fname = "actions.txt";
+    if( argc > 1 )
+        fname = argv[1];
+    std::ifstream actions(fname, std::ios::in);
+    //results_t results = scross.action(line);
     while (std::getline(actions, line))
     {
-        //results_t results = scross.action(line);
-        //for (results_t::const_iterator it=results.begin(); it!=results.end(); ++it)
-        //{
-        //    std::cout << *it << std::endl;
-        //}
+        results_t results = scross.action(line);
+        for (results_t::const_iterator it=results.begin(); it!=results.end(); ++it)
+        {
+            std::cout << *it << std::endl;
+        }
     }
     return 0;
 }
