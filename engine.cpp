@@ -158,7 +158,9 @@ std::vector<order_action_t> Engine::execute(order_action_t action)
     else if (action.type_ == action_type_t::PRINT)
     {
         for (auto& book_pair : books_)
+        {
             book_pair.second.dump(results); 
+        }
     }
     else 
         assert(0 && "invalid action type in Engine::match");

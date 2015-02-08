@@ -39,12 +39,7 @@ struct OrderInfo
     uint16_t qty_;
     double price_;
 
-    inline
-    bool crosses(double price)
-    {
-        //std::cerr << price << std::endl;
-        return ((side_ == side_t::BUY) ? price <= price_ : price >= price_);  
-    }
+    inline bool crosses(double price) { return ((side_ == side_t::BUY) ? price <= price_ : price >= price_); }
 };
 
 typedef OrderInfo order_info_t;
@@ -88,18 +83,21 @@ struct Book
     Book()=default;
     Book(const std::string& symbol) : symbol_(symbol) { }
 
-    void add_order(const order_info_t& ord, std::unordered_map<uint32_t, order_ref_t>& );
+    inline void add_order(const order_info_t& ord, std::unordered_map<uint32_t, order_ref_t>& );
     void dump(std::vector<order_action_t>& info);
-
-    template <typename T>
-    void remove_order(T& levels, order_ref_t& t);
 
     inline void remove_sell(order_ref_t& t);
     inline void remove_buy(order_ref_t& t);
+
+    // buy_start(), buy_end()
+    // sell_start(), sell_end()
     
     std::string symbol_;
     std::map<double, level_t> sells_;
     std::map<double, level_t, std::greater<double>> buys_;
+private:
+    template <typename T>
+    void remove_order(T& levels, order_ref_t& t);
 };
 
 typedef Book book_t;
