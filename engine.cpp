@@ -10,7 +10,7 @@ void Engine::match(order_info_t& o, Levels& levels, std::vector<order_action_t>&
     while (it!=end) 
     {
         double level_price = it->first;
-        if (!o.qty_ || !o.crosses(level_price)) //should check buy/sell then do correct comparison
+        if (!o.qty_ || !o.crosses(level_price))
             break;
 
         Book::level_t& level = it->second; 

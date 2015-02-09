@@ -108,12 +108,25 @@ Example session:
 #include "serializer.h"
 #include "engine.h"
 
+/* SimpleCross is the driver for decoupled 
+ * engine/matching logic and raw input deserialization. 
+ * support for multiple input formats (possibly simultaneously)
+ * only requires more/different serializers 
+ *
+ *
+ * in all classes, minimize explicit memory allocation,
+ * let the containers manage.
+ * */
+
 
 class SimpleCross
 {
 public:
     SimpleCross() { results_.reserve(16); }
-
+    
+    //parse input 
+    //feed to engine  
+    //format engine output
     results_t action(const std::string& line)
     { 
         order_action_t a;
@@ -127,18 +140,20 @@ public:
 
         return (results_t());
     }
+
 private:
     std::vector<order_action_t> results_;
     Engine engine_;
     Serializer serializer_;
 };
 
+//main function takes command line argument as file name to try to read 
 int main(int argc, char **argv)
 {
     SimpleCross scross;
     std::string line;
 
-    const char *fname = "actions/actions.txt";
+    const char *fname = "actions.txt";
     if (argc > 1)
         fname = argv[1];
 

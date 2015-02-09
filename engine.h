@@ -26,6 +26,8 @@ private:
     inline void handle_cancel(uint32_t order_id, std::vector<order_action_t>& results);
     inline void handle_submit(order_info_t&, std::vector<order_action_t>& results);
 
+    //buys, sells are different types so templating minimizes
+    //code duplication
     template<typename Levels>
     void match(order_info_t&, Levels& levels, std::vector<order_action_t>& results);
 

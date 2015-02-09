@@ -27,6 +27,9 @@ enum class Side : uint8_t
 
 typedef Side side_t;
 
+//symbol in place. On 32bit ptr systems, 
+//there might be more relevant savings 
+//from using flyweight(ptr to symbol)
 struct OrderInfo 
 {
     uint32_t id_;
@@ -52,6 +55,7 @@ struct OrderAction
 {
     OrderAction()=default;
 
+    //provide constructors for common actions
     OrderAction(action_type_t type, const order_info_t& order_info) 
         : type_(type), order_info_(order_info) { }  
 
@@ -66,7 +70,7 @@ struct OrderAction
     {
         order_info_t order_info_;
         error_info_t error_info_;
-    };
+    }; //always on or the other, reuse space
 };
 
 typedef OrderAction order_action_t;
