@@ -1,10 +1,12 @@
 #ifndef __ENGINE_H__
 #define __ENGINE_H__
-#include "types.h"
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
 #include <map>
+#include "book.h"
+#include "types.h"
+
 
 
 class Engine

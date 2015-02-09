@@ -52,6 +52,7 @@ bool Serializer::deserialize(const std::string& line, order_action_t& a)
 std::string Serializer::convert(const order_action_t& a)
 {
     char buf[128];
+    buf[sizeof(buf) - 1] = 0;
 
     if (a.type_ == action_type_t::ERR)
         snprintf(buf, sizeof(buf), "E %u %s", a.error_info_.id_, a.error_info_.msg_);

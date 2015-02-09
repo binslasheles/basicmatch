@@ -2,12 +2,7 @@
 #define __SC_TYPES__H__
 #include <list>
 #include <string>
-#include <map>
-#include <vector>
-#include <unordered_map>
 #include <list>
-#include <limits>
-#include <iostream>
 
 enum class ActionType : uint8_t 
 {
@@ -76,29 +71,6 @@ struct OrderAction
 
 typedef OrderAction order_action_t;
 
-struct Book 
-{
-    typedef std::list<order_info_t> level_t;
-    typedef level_t::iterator order_ref_t;
-
-    Book()=default;
-    Book(const std::string& symbol) : symbol_(symbol) { }
-
-    inline void add_order(const order_info_t& ord, std::unordered_map<uint32_t, order_ref_t>& );
-    void dump(std::vector<order_action_t>& info);
-
-    inline void remove_sell(order_ref_t& t);
-    inline void remove_buy(order_ref_t& t);
-
-    std::string symbol_;
-    std::map<double, level_t> sells_;
-    std::map<double, level_t, std::greater<double>> buys_;
-private:
-    template <typename T>
-    void remove_order(T& levels, order_ref_t& t);
-};
-
-typedef Book book_t;
 typedef std::list<std::string> results_t;
 
 #endif
