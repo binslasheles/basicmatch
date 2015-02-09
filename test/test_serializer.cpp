@@ -15,12 +15,18 @@ int main()
 
     order_action_t a;
     while (std::getline(ff, line))
+    {
         assert(!s.deserialize(line, a) && a.type_ == action_type_t::ERR);  //std::cout << line << std::endl;
+        std::cout << "invalid: [" << line << "]" <<std::endl;    
+    }
 
     ff.close();
     ff.clear();
     ff.open("valid.txt");
 
     while (std::getline(ff, line))
+    {
         assert(s.deserialize(line, a) && a.type_ != action_type_t::ERR);  //std::cout << line << std::endl;
+        std::cout << "valid: [" << line << "]" <<std::endl;    
+    }
 }

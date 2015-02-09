@@ -19,7 +19,7 @@ private:
 
     //no backtracking or lookahead so the expressions are potentially 
     //o(n).  chosen  instead of c style io and stringstream iteration
-    //for more straigtforward error detection abilities.    
+    //for more concise error detection.    
     std::regex submit_fmt_{"O (\\d+) ([0-9a-zA-Z]{0,8}) ([BS]) (\\d+) ([-+]?[0-9]{0,7}\\.?[0-9]{0,5})"};
     std::regex cancel_fmt_{"X (\\d+)"};
     std::regex print_fmt_{"P"};

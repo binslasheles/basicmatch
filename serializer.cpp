@@ -11,7 +11,7 @@ bool Serializer::deserialize(const std::string& line, order_action_t& a)
     {
         try
         {
-            if (std::regex_match(line, m_, submit_fmt_) && m_[5] != ".")
+            if (std::regex_match(line, m_, submit_fmt_) && m_[5] != ".")//regex allows "."
             {
                 a.type_ = action_type_t::SUBMIT;
                 a.order_info_.qty_   = (uint32_t)std::stoi(m_[4]); 
