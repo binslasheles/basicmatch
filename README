@@ -1,0 +1,7 @@
+usage
+
+make scross
+
+./scross [filename] 
+
+filename defaults to "actions.txt" 
