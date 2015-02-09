@@ -9,7 +9,16 @@
 
 struct Book 
 {
+    //lists allow insertion and deletion of previous
+    //and prior elements without invalidating existing 
+    //iterators, o(1) push_back and pop_front provide
+    //queue properties
     typedef std::list<order_info_t> level_t;
+
+    //exported, allows clients to remove 
+    //order from level in o(1), however removal of 
+    //level itself (if empty) will be log(n) due to
+    //containing map
     typedef level_t::iterator order_ref_t;
 
     Book()=default;
@@ -28,7 +37,14 @@ struct Book
     inline void remove_buy(order_ref_t& it) { remove_order(buys_, it); }
 
     std::string symbol_;
+
+    //frequent iteration in key magnitude order, prefer not to pay for sort at each 
+    //iteration time so use tree-map (uses default compare std::less)
     std::map<double, level_t> sells_;
+
+    //frequent iteration in reverse key magnitude order, 
+    //prefer not to pay for sort at each iteration time so use tree-map 
+    //with reversed comparison function
     std::map<double, level_t, std::greater<double>> buys_;
 private:
     template <typename T>
@@ -38,8 +54,8 @@ private:
 
         lit->second.erase(it);
 
-        if (lit->second.empty())
-            levels.erase(lit);
+        if (lit->second.empty()) //cancel o(1) when level not empty afterward
+            levels.erase(lit);   //log(n) otherwise
     }
 };
 

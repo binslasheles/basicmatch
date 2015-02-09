@@ -8,7 +8,10 @@
 #include "types.h"
 
 
-
+/* The engine class contains all the actual matching logic.  It
+ * keeps one book per instrument/symbol.  Engine expects in order
+ * iteration of levels from book, as well as queue accessors from
+ * book levels */
 class Engine
 {
 public:
@@ -26,8 +29,17 @@ private:
     template<typename Levels>
     void match(order_info_t&, Levels& levels, std::vector<order_action_t>& results);
 
+    //no sorting requirement, want amortized o(1) lookup, insertion
+    //so prefer hash-set to tree-set
     std::unordered_set<uint32_t> completed_orders_; 
+
+    //no sorting requirement, want amortized o(1) lookup so prefer hash-map
+    //keep iterator to order instead of ptr for o(1) removal from 
+    //containing level (list)
     std::unordered_map<uint32_t, book_t::order_ref_t> orders_;
+
+    //no sorting requirement, want amortized o(1) lookup so prefer hash-map to tree-map
+    //data type is book
     std::unordered_map<std::string, book_t> books_;
 };
 

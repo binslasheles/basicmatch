@@ -138,7 +138,7 @@ int main(int argc, char **argv)
     SimpleCross scross;
     std::string line;
 
-    const char *fname = "actions.txt";
+    const char *fname = "actions/actions.txt";
     if (argc > 1)
         fname = argv[1];
 
