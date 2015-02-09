@@ -1,7 +1,10 @@
 usage
 
-make scross
+make [scross|serialtest]
 
 ./scross [filename] 
 
 filename defaults to "actions.txt" 
+
+./serialtest
+requres valid.txt, invalid.txt in local directory
