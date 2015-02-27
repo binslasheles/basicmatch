@@ -1,6 +1,3 @@
-// Stub implementation and example driver for BasicMatch.
-// Your crossing logic should be accesible from the BasicMatch class.
-// Other than the signature of BasicMatch::action() you are free to modify as needed.
 #include <string>
 #include <memory>
 #include <fstream>

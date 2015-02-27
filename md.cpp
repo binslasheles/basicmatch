@@ -1,6 +1,3 @@
-// Stub implementation and example driver for Md.
-// Your crossing logic should be accesible from the Md class.
-// Other than the signature of Md::action() you are free to modify as needed.
 #include <string>
 #include <memory>
 #include <iostream>
