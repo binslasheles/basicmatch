@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script>AUTOBAHN_DEBUG = true;</script>
+    <script src="autobahn.min.jgz"></script>
+    <script src="jquery-2.1.3.min.js"></script>
+    <script src="underscore.js"></script>
+    <script src="backbone.js"></script>
+    <link rel="stylesheet" media="screen" href="ladder.css"></link>
+</head>
+<body>
+<div id="main"></div>
+
+<script type="text/javascript">
+(function($) {
+
+    LadderView = Backbone.View.extend({
+        tagName : 'table',
+        className: 'main_ladder',
+        initialize : function(opts) { //{ 'buys' : ..., 'sells' : ..., txn_id : ... }
+            this.ticks_per_handle = 1;
+            this.tick_size        = (1 / this.ticks_per_handle);
+            this.rows_per_side    = 16;
+            this.offset           = Math.floor(this.rows_per_side / this.ticks_per_handle);
+
+            this.buys             = {};
+            this.sells            = {};
+
+            for(var i = 0; i < opts.buys.length; ++i) { // [qty, price]
+                if( opts.buys[i][0])
+                    this.buys[opts.buys[i][1]]   = opts.buys[i][0]; //price - > qty
+
+                if( opts.sells[i][0])
+                    this.sells[opts.sells[i][1]] = opts.sells[i][0]; //price - > qty
+            }
+
+            /*
+               for( msg in backlog ) {
+                   if(id > opts.txn_id) {
+                       apply_msg(this.data, msg);
+                   }
+               }
+           */
+        },
+        set_min_max : function() {
+            var kf = function(sk) { return parseInt(sk); }
+            this.max = _.isEmpty(this.sells) ? (_.isEmpty(this.buys) ? this.rows_per_side : (parseInt(_.max(_.keys(this.buys), kf))) + this.offset) : (parseInt(_.min(_.keys(this.sells), kf)) + this.offset - 1);
+            this.min = this.max - 2 * this.offset;
+        },
+        update_lvl : function(lvls, qty_col, price, delta_qty) {
+            var lvl_idx = Math.floor((this.max - price) * this.ticks_per_handle);
+
+            if(!(price in lvls)) {
+                //delete current max
+                lvls[price] = 0;
+            }
+
+            lvls[price] += delta_qty;
+
+            if(lvls[price]) {
+                $('tr', this.el).eq(lvl_idx).children('td').eq(qty_col).html(lvls[price]);
+            } else {
+                delete lvls[price];
+                $('tr', this.el).eq(lvl_idx).children('td').eq(qty_col).html("");
+            }
+        },
+        rem_qty : function(args) {
+            var symbol    = args[0],
+                txn_id    = args[1], 
+                delta_qty = args[2], 
+                price     = args[3];
+
+            //txn_id check
+
+            if(price in this.sells) {
+                this.update_lvl(this.sells, 2, price, -delta_qty);
+            } else if(price in this.buys) {
+                this.update_lvl(this.buys, 0, price, -delta_qty);
+            } else {
+                console.log('update at invalid price level');
+            }
+        },
+        cancel : function(args) {
+            this.rem_qty(args);
+            console.log('cancel with args', args);
+        },
+        trade : function(args) {
+            this.rem_qty(args);
+            console.log('trade with args', args);
+        },
+        submit : function(args) {
+            var symbol = args[0],
+                txn_id = args[1], 
+                side   = args[2],
+                qty    = args[3], 
+                price  = args[4];
+
+            //if(new best bid outside min max) or (new best ask) {
+                //...
+            //}
+            //if(side == bid) {
+            // if( price < 
+            //
+            //
+            //
+            //} else { 
+            //
+            // 
+            // 
+            //}
+            //
+            //
+            //this.max = _.isEmpty(this.sells) ? (_.isEmpty(this.buys) ? this.rows_per_side : (parseInt(_.max(_.keys(this.buys), kf))) + this.offset) : (parseInt(_.min(_.keys(this.sells), kf)) + this.offset - 1);
+
+            if( price > this.max || price <= this.min) {
+
+                if(side == 66) {
+                    this.buys[price] = qty;
+                } else {
+                    this.sells[price] = qty;
+                }
+
+                //this.set_min_max(); //is this part of rendering?
+                this.render();
+            } else if( side == 66 ) { //66 == B, 
+                this.update_lvl(this.buys, 0, price, qty);
+            } else {
+                this.update_lvl(this.sells, 2, price, qty);
+            }
+
+            console.log('submit with args', args);
+        },
+        recover : function(args) {
+            console.log('recover with args', args);
+        },
+        snapshot : function(args) {
+            console.log('snapshot with args', args);
+        },
+        render : function() {
+            this.$el.html('');
+
+            this.set_min_max();
+
+            for(var price = this.max, i = 0; this.min < price; price -= this.tick_size, ++i) {
+                var tr = $('<tr><td></td><td class="price">' + price + '</td><td></td></tr>');
+                if( i < this.rows_per_side ) {
+                    tr.children('td').eq(2).addClass('ask_qty');
+                } else {
+                    tr.children('td').eq(0).addClass('bid_qty');
+                }
+
+                this.$el.append(tr);
+            }
+            
+            var rows = $('tr', this.el);
+            
+            //for(var i = 0; i < this.sells.length; ++i) {
+            _.each(this.sells, function(qty, price) {
+                var sidx = Math.floor((this.max - price) * this.ticks_per_handle);
+                rows.eq(sidx).children('td').eq(2).html(qty);
+            }, this);
+
+            _.each(this.buys, function(qty, price) {
+                var bidx = Math.floor((this.max - price) * this.ticks_per_handle);
+                rows.eq(bidx).children('td').eq(0).html(qty);
+            }, this);
+
+            return this;
+        }
+    });
+
+    $(document).ready(function() {
+        var connection = new autobahn.Connection({
+            url: 'ws://192.168.1.104:9090',
+            realm: 'realm1'
+        });
+
+        connection.onopen = function (session) {
+            console.log('connected');
+
+            var backlog = []
+            function handler(evt_id) {
+                return function(args) {
+                    if( !window.app ) {
+                        backlog.push(args);
+                    } else {
+                        switch(evt_id) { //args[0]
+                            case 1 : window.app.cancel(args); break;
+                            case 2 : window.app.submit(args); break;
+                            case 3 : window.app.trade(args); break;
+                            case 4 : window.app.snapshot(args); break;
+                        }
+                    } 
+                }
+            }
+
+            session.subscribe("com.simple_cross.cancel", handler(1));
+            session.subscribe("com.simple_cross.submit", handler(2));
+            session.subscribe("com.simple_cross.trade", handler(3));
+            session.subscribe("com.simple_cross.snapshot", handler(4)); //levels
+
+            session.call('com.simple_cross.levels', ['IBM']).then(
+                function(res) {
+                    try {
+
+                        window.app = new LadderView({
+                            sells : res.args[1] ,//[{qty : 17, price : 100.}, {qty : 24, price : 101.}, {qty : 98, price : 102.}], 
+                            buys : res.args[2],//[{qty : 81, price : 99.}, {qty : 2, price : 98.}, {qty : 66, price : 97.}], 
+                            txn_id : res.args[0], 
+                            backlog: backlog
+                        });
+
+                        session.subscribe("com.simple_cross.recover", window.app.recover);
+
+                        $('#main').html(window.app.render().el);
+                    } catch(e) { console.log(e); }
+                },
+                function(err) {
+                    console.log("Error (" + err.reason + ")");
+                }
+            );
+        };
+              
+        connection.open();
+    });
+
+})(jQuery);
+</script>
+</body>
+</html>
