@@ -11,7 +11,8 @@ enum class ActionType : uint8_t
     CANCEL='X', 
     SUBMIT='O', 
     FILL='F',
-    PRINT='P'
+    PRINT='P',
+    TRADE=FILL
 };
 
 typedef ActionType action_type_t;
