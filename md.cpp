@@ -42,7 +42,7 @@ public:
         level_book_t& book = get_book(symbol);
 
         if(txn_id - txn_id_ > 1) {
-            recover();
+            recover(symbol);
         }
 
         txn_id_ = txn_id;
@@ -62,7 +62,7 @@ public:
         level_book_t& book = get_book(symbol);
 
         //if(txn_id - txn_id_ > 1) {
-        //    recover();
+        //    recover(symbol);
         //}
 
         if(price < book.best_sell())  {
@@ -80,7 +80,7 @@ public:
         level_book_t& book = get_book(symbol);
 
         //if(txn_id - txn_id_ > 1 ) {
-        //    recover();
+        //    recover(symbol);
         //}
         
         if( (side_t)side == side_t::BUY ) {
@@ -127,11 +127,11 @@ public:
     static void snap_recv_cb(void *user_data, uint8_t *buf, uint16_t& bytes) {
         Md& md = *(Md*)user_data;
         const MdMsg* msg;
-        const SnapRequest* snp;
+        const SnapResponse* snp;
 
         while(bytes) {
-            if((msg = snp = SnapRequest::read_s(buf, bytes))) { 
-                md.on_snapshot(std::string(snp->symbol()));
+            if((msg = snp = SnapResponse::read_s(buf, bytes))) { 
+                md.on_snapshot(snp->symbol());
             } else {
                  if((msg = MdMsg::read_s(buf, bytes)) ) {
                     std::cerr << "<== UNKNOWN type <" << msg->get_type() << ">" << std::endl;
@@ -241,7 +241,10 @@ public:
         //std::cerr << "received goodbye because <" << msg << ">" << std::endl; 
     }
 
-    void recover() {} 
+    void recover(const std::string& symbol) {
+        SnapRequest req(symbol.c_str(), 16);
+        snap_sock_.send(req.get_data(), req.get_size());
+    } 
 
 private:
     uint64_t txn_id_ = 0;
