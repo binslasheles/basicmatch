@@ -20,13 +20,7 @@ struct LevelBook {
     typedef delegate<void(const LevelBook&)> snapshot_cb_t;
     typedef delegate<void(const LevelBook&, side_t, uint16_t, double, action_type_t)> level_update_cb_t;
 
-    LevelBook() : book_id_(0) {
-        for(uint32_t i = 0; i < t_levels_; ++i)
-            sells_[i] =  {0, std::numeric_limits<double>::infinity()};
-
-        outer_buys_[-std::numeric_limits<double>::infinity()] = 0;
-        outer_sells_[std::numeric_limits<double>::infinity()] = 0;
-    }
+    LevelBook()=default;
 
     LevelBook(const std::string& symbol, const level_update_cb_t& level_update_cb, const snapshot_cb_t& snapshot_cb) 
         : book_id_(0), symbol_(symbol),level_update_cb_(level_update_cb), snapshot_cb_(snapshot_cb) {
