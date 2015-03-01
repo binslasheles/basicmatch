@@ -8,3 +8,17 @@ md requires msgpack-c
 web component requires autobahnjs, underscorejs, backbonejs
 
 python component requires twisted, autobahnpy 
+
+
+
+ +------------+               +------+               +---------+         +----+
+ | web_ladder | <-websocket-> | wamp | <-websocket-> | wsproxy | <-tcp-> | md | <-udp---+
+ +------------+               +------+               +---------+         +----+         |
+                                 ^                                        ^             |
+      +------------+             |                                        |             |
+      | web_ladder | <-websocket-+                                        |       +--------+         +----+
+      +------------+             |                                        +-tcp-> | bmatch | <-tcp-> | cl |
+                                 |                                                +--------+         +----+
+     +------------+              |
+     | web_ladder | <-websocket--+
+     +------------+
