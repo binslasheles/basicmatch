@@ -3,6 +3,7 @@
 #include <string.h>
 #include "types.h"
 
+
 struct __attribute__((packed)) Msg {
     static Msg* read_s(uint8_t *buf, uint32_t bytes)
     {
@@ -44,6 +45,10 @@ protected:
     uint64_t txn_id_;
 };
 
+template <typename SockType>
+inline void send(SockType& sock, const MdMsg& m) {
+    sock.send(m.get_data(), m.get_size());
+}
 
 template <int t_size_>
 struct fixed_str {
@@ -166,8 +171,8 @@ struct __attribute__((packed)) SnapResponse : public MdMsg {
 
     SnapResponse() : MdMsg(sizeof *this, type, 0), n_levels_(0) { }
 
-    SnapResponse(const char* symbol) 
-        : MdMsg(sizeof *this, type, 0) , n_levels_(0) { }
+    SnapResponse(uint64_t txn_id, const char* symbol) 
+        : MdMsg(sizeof *this, type, txn_id) , n_levels_(0) { }
 
     static SnapResponse* read_s(uint8_t* buf, uint32_t bytes) { return MdMsg::read_s<SnapResponse>(buf, bytes); }
 

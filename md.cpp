@@ -27,25 +27,59 @@ public:
         if (books_.find(symbol) == books_.end())
             books_.emplace(std::piecewise_construct, 
                 std::forward_as_tuple(symbol), 
-                std::forward_as_tuple(symbol, level_book_t::level_update_cb_t(this, &Md::on_level_update), level_book_t::snapshot_cb_t(this, &Md::on_snapshot_request))
+                std::forward_as_tuple(symbol, level_book_t::level_update_cb_t(this, &Md::on_level_update), level_book_t::snapshot_cb_t(this, &Md::on_new_levels))
             );
 
         return (books_[symbol]);
     }
 
-    inline void on_snapshot(const std::string& symbol) {
+    inline void on_snapshot(const std::string& symbol, uint64_t txn_id, const SnapResponse::Level* levels) {
 
+        level_book_t& book = get_book(symbol);
+
+        book.clear();
+
+        for(int i = 0; i < SnapResponse::MAX_LEVELS; ++i) {
+
+            const SnapResponse::Level& l = levels[i];
+
+            if(l.side_ == side_t::NONE)
+                break;
+
+            if( (side_t)l.side_ == side_t::BUY ) {
+                book.add_buy(l.price_, l.qty_);
+                std::cerr << "BUY " << l.qty_ << "@" << l.price_ << std::endl;
+            } else {
+                std::cerr << "SELL " << l.qty_ << "@" << l.price_ << std::endl;
+                book.add_sell(l.price_, l.qty_);
+            } 
+        }
+
+        /* for(action in recorded actions) {
+         *    apply_action(book);
+         * }
+         */
+        
+        //std::cerr << "<== snapshot response" << std::endl; 
+
+        recovering_ = false;
+        txn_id_     = txn_id;
+        on_new_levels(book);
     } 
 
     inline void on_trade(const std::string& symbol, uint64_t txn_id, uint16_t qty, double price) {  
+
+        if(recovering_) {
+            //record trade
+            return;
+        }
 
         level_book_t& book = get_book(symbol);
 
         if(txn_id - txn_id_ > 1) {
             recover(symbol);
-        }
-
-        txn_id_ = txn_id;
+        } else 
+            txn_id_ = txn_id;
         
         if(price == book.best_buy())  {
             book.trade_buy(price, qty);
@@ -59,11 +93,17 @@ public:
 
     inline void on_cancel(const std::string& symbol, uint64_t txn_id, uint16_t qty, double price) {
 
+        if(recovering_) {
+            //record cancel
+            return;
+        }
+
         level_book_t& book = get_book(symbol);
 
-        //if(txn_id - txn_id_ > 1) {
-        //    recover(symbol);
-        //}
+        if(txn_id - txn_id_ > 1) {
+            recover(symbol);
+        } else
+            txn_id_ = txn_id;
 
         if(price < book.best_sell())  {
             book.cancel_buy(price, qty);
@@ -77,12 +117,19 @@ public:
 
     inline void on_submit(const std::string& symbol, uint64_t txn_id, uint8_t side, uint16_t qty, double price) {
 
+        if(recovering_) {
+            //record submit
+            return;
+        }
+
         level_book_t& book = get_book(symbol);
 
-        //if(txn_id - txn_id_ > 1 ) {
-        //    recover(symbol);
-        //}
-        
+        if(txn_id - txn_id_ > 1 ) {
+            recover(symbol);
+            return;
+        } else 
+            txn_id_ = txn_id;
+
         if( (side_t)side == side_t::BUY ) {
             book.add_buy(price, qty);
         } else {
@@ -91,8 +138,6 @@ public:
 
         std::cerr << "<== submit symbol <" << symbol << "> txn <" << txn_id << "> side <" << side 
             << "> qty <" << qty << "> price <" << price << ">" << std::endl;
-
-        //books_[symbol].dump();
     } 
 
     static void recv_cb(void *user_data, uint8_t *buf, uint16_t& bytes) {
@@ -128,10 +173,10 @@ public:
         Md& md = *(Md*)user_data;
         const MdMsg* msg;
         const SnapResponse* snp;
-
+        //std::cerr << "===== received snapshot response ======" << std::endl;
         while(bytes) {
             if((msg = snp = SnapResponse::read_s(buf, bytes))) { 
-                md.on_snapshot(snp->symbol());
+                md.on_snapshot(std::string(snp->symbol()), snp->txn_id(), snp->levels());
             } else {
                  if((msg = MdMsg::read_s(buf, bytes)) ) {
                     std::cerr << "<== UNKNOWN type <" << msg->get_type() << ">" << std::endl;
@@ -146,7 +191,10 @@ public:
         }
     }
 
-    void on_snapshot_request(const level_book_t& book) {
+    void on_new_levels(const level_book_t& book) {
+
+        if(recovering_)
+            return;
 
         std::vector<Autobahn::object> args;
         args.emplace_back(book.symbol_);
@@ -156,17 +204,21 @@ public:
     }
 
     void on_level_update(const level_book_t& book, side_t side, uint16_t qty, double price, action_type_t action) {
+
+        if(recovering_)
+            return;
+
         if(action == action_type_t::CANCEL) {
             s_.publish("com.simple_cross.cancel", {
                 Autobahn::object(book.symbol_), 
-                Autobahn::object(book.txn_id_), 
+                Autobahn::object(book.book_id_), 
                 Autobahn::object(qty), 
                 Autobahn::object(price)
             }); 
         } else if (action == action_type_t::SUBMIT) {
             s_.publish("com.simple_cross.submit", {
                 Autobahn::object(book.symbol_), 
-                Autobahn::object(book.txn_id_), 
+                Autobahn::object(book.book_id_), 
                 Autobahn::object((char)side), 
                 Autobahn::object(qty), 
                 Autobahn::object(price)
@@ -175,7 +227,7 @@ public:
         } else /*trade*/ {
             s_.publish("com.simple_cross.trade", {
                 Autobahn::object(book.symbol_), 
-                Autobahn::object(book.txn_id_), 
+                Autobahn::object(book.book_id_), 
                 Autobahn::object(qty), 
                 Autobahn::object(price)
             });
@@ -204,11 +256,11 @@ public:
             Autobahn::objbuf z;
             //Autobahn::object sells(sellsv, &z);
             //Autobahn::object buys(buysv, &z);
-            out.emplace_back(book.txn_id_ - 1);
+            out.emplace_back(book.book_id_ - 1);
             out.emplace_back(sellsv, &z);
             out.emplace_back(buysv, &z);
 
-            //return {Autobahn::object(book.txn_id_ - 1), sells, buys};
+            //return {Autobahn::object(book.book_id_ - 1), sells, buys};
         }
 
         //return std::vector<Autobahn::object>();
@@ -219,7 +271,10 @@ public:
         //
         const std::string& symbol = args[0].as<std::string>(); 
         std::vector<Autobahn::object> vlevels;
-        vec_levels(symbol, vlevels);
+
+        if(!recovering_)
+            vec_levels(symbol, vlevels);
+
         return vlevels;
     }
 
@@ -241,13 +296,19 @@ public:
         //std::cerr << "received goodbye because <" << msg << ">" << std::endl; 
     }
 
-    void recover(const std::string& symbol) {
-        SnapRequest req(symbol.c_str(), 16);
-        snap_sock_.send(req.get_data(), req.get_size());
+    void recover(const std::string& symbol) { 
+        recovering_ = true;
+
+        if( !snap_sock_.connect() )
+            std::cerr << "couldn't request snapshot" << std::endl;
+        else {
+            send(snap_sock_, SnapRequest(symbol.c_str(), 16));
+        }
     } 
 
 private:
     uint64_t txn_id_ = 0;
+    bool recovering_ = false;
     Autobahn::session s_;
     UdpSocket md_sock_;
     TcpSocket snap_sock_;

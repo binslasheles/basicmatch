@@ -20,7 +20,7 @@ struct LevelBook {
     typedef delegate<void(const LevelBook&)> snapshot_cb_t;
     typedef delegate<void(const LevelBook&, side_t, uint16_t, double, action_type_t)> level_update_cb_t;
 
-    LevelBook() : txn_id_(0) {
+    LevelBook() : book_id_(0) {
         for(uint32_t i = 0; i < t_levels_; ++i)
             sells_[i] =  {0, std::numeric_limits<double>::infinity()};
 
@@ -29,7 +29,7 @@ struct LevelBook {
     }
 
     LevelBook(const std::string& symbol, const level_update_cb_t& level_update_cb, const snapshot_cb_t& snapshot_cb) 
-        : txn_id_(0), symbol_(symbol),level_update_cb_(level_update_cb), snapshot_cb_(snapshot_cb) {
+        : book_id_(0), symbol_(symbol),level_update_cb_(level_update_cb), snapshot_cb_(snapshot_cb) {
         for(uint32_t i = 0; i < t_levels_; ++i)
             sells_[i] =  {0, std::numeric_limits<double>::infinity()};
 
@@ -40,8 +40,20 @@ struct LevelBook {
 
     inline uint32_t levels() const { return t_levels_; }
 
+    void clear() {
+        for(uint32_t i = 0; i < t_levels_; ++i) {
+            sells_[i] = {0, std::numeric_limits<double>::infinity()};
+            buys_[i] =  {0, -std::numeric_limits<double>::infinity()};
+        }
+
+        outer_buys_.erase(++outer_buys_.begin(), outer_buys_.end());
+        outer_sells_.erase(++outer_sells_.begin(), outer_sells_.end());
+
+        book_id_++;
+    }
+
     const static uint32_t last_idx_s = t_levels_ - 1;
-    uint64_t txn_id_;
+    uint64_t book_id_;
     std::string symbol_;
     level_update_cb_t level_update_cb_;
     snapshot_cb_t snapshot_cb_;
@@ -83,7 +95,7 @@ struct LevelBook {
                 buys_[lvl] = {qty, price};
                 snapshot_cb_(*this);
             }
-            ++txn_id_;
+            ++book_id_;
             return;
         }
 
@@ -117,7 +129,7 @@ struct LevelBook {
                     }
                 }
 
-                ++txn_id_;
+                ++book_id_;
                 return;
             }
         }
@@ -154,7 +166,7 @@ struct LevelBook {
                 snapshot_cb_(*this);
             }
 
-            ++txn_id_;
+            ++book_id_;
             return;
         }
 
@@ -191,7 +203,7 @@ struct LevelBook {
                     }
                 }
 
-                ++txn_id_;
+                ++book_id_;
                 return;
             }
         }

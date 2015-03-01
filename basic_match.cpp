@@ -22,11 +22,6 @@
  * let the containers manage.
  * */
 
-template <typename SockType>
-inline void send(SockType& sock, const MdMsg& m) {
-    sock.send(m.get_data(), m.get_size());
-}
-
 class BasicMatch;
 
 struct Client {
@@ -42,7 +37,7 @@ struct Client {
     } 
 
     static void err_cb(void* user_data, int err) {
-        std::cerr << "err on client connect" << std::endl;
+        std::cerr << "err on client connect <" << err << "> " << strerror(err) << std::endl;
     } 
 
     static void recv_cb(void *user_data, uint8_t *buf, uint16_t& bytes);
@@ -143,8 +138,7 @@ public:
 
         book_t& book = engine_.get_book(symbol);
 
-        SnapResponse snap(symbol);
-
+        SnapResponse snap(book.txn_id_, symbol);
 
         //XXX create level object, with list and cumm qty to avoid the inner loops
         
@@ -214,7 +208,7 @@ void Client::snap_request_recv_cb(void *user_data, uint8_t *buf, uint16_t& bytes
     while(bytes) {
         if((msg = req = SnapRequest::read_s(buf, bytes))) { 
             bmatch.handle_snap_request(cl, req->symbol(), req->levels());
-            bmatch.remove_client(cl.id_);
+            //bmatch.remove_client(cl.id_);
         } else {
              if((msg = MdMsg::read_s(buf, bytes)) ) {
                 std::cerr << "<== UNKNOWN type <" << msg->get_type() << ">" << std::endl;
