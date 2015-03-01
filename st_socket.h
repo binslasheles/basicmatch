@@ -37,6 +37,8 @@ public:
     void set_error_cb(error_cb_t error_cb) 
         { error_cb_ = error_cb; }
 
+    void close();
+
 	static void start_recv_loop_s();
 	static void stop_recv_loop_s();
 

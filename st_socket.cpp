@@ -212,13 +212,17 @@ Socket::Socket(const SocketAddr& local_addr, const SocketAddr& remote_addr)
 Socket::~Socket() {
 
     if( fd_ != -1 ) { 
-        if( kqueue_s.del_socket(fd_) )
-            close(fd_);
-        //else
-        //    std::cout << "failed to delete" << std::endl;
+        close();
     }
 
     delete[] recv_buf_;
+}
+
+void Socket::close() {
+    if( kqueue_s.del_socket(fd_) )
+        ::close(fd_);
+    //else
+    //    std::cout << "failed to delete" << std::endl;
 }
 
 TcpSocket::TcpSocket(const SocketAddr& local_addr, const SocketAddr& group_addr)

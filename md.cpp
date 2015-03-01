@@ -61,7 +61,7 @@ public:
          */
         
         //std::cerr << "<== snapshot response" << std::endl; 
-
+        snap_sock_.close();
         recovering_ = false;
         txn_id_     = txn_id;
         on_new_levels(book);
