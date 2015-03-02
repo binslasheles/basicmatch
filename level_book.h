@@ -131,14 +131,6 @@ struct LevelBook {
         outer_buys_[price] -= qty;
     }
 
-    void cancel_buy(double price, uint32_t qty) {
-        remove_buy(price, qty, action_type_t::CANCEL);
-    }
-
-    void trade_buy(double price, uint32_t qty) {
-        remove_buy(price, qty, action_type_t::TRADE);
-    }
-
     void add_sell(double price, uint32_t qty) {
         //int lvl = 0;
         //while(sells_[lvl].price_ < price) ++lvl; 
@@ -205,12 +197,28 @@ struct LevelBook {
         outer_sells_[price] -= qty;
     }
 
-    void cancel_sell(double price, uint32_t qty) {
-        remove_sell(price, qty, action_type_t::CANCEL);
+    inline void submit(side_t side, double price, uint32_t qty) {
+        if( side == side_t::BUY ) {
+            add_buy(price, qty);
+        } else {
+            add_sell(price, qty);
+        } 
     }
 
-    void trade_sell(double price, uint32_t qty) {
-        remove_sell(price, qty, action_type_t::TRADE);
+    inline void trade(double price, uint32_t qty) {
+        if(price == best_buy())  {
+            remove_buy(price, qty, action_type_t::TRADE);
+        } else {
+            remove_sell(price, qty, action_type_t::TRADE);
+        }
+    }
+
+    inline void cancel(double price, uint32_t qty) {
+        if(price < best_sell())  {
+            remove_buy(price, qty, action_type_t::CANCEL);
+        } else {
+            remove_sell(price, qty, action_type_t::CANCEL);
+        }
     }
 };
 

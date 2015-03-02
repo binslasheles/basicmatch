@@ -172,7 +172,7 @@ struct __attribute__((packed)) SnapResponse : public MdMsg {
     SnapResponse() : MdMsg(sizeof *this, type, 0), n_levels_(0) { }
 
     SnapResponse(uint64_t txn_id, const char* symbol) 
-        : MdMsg(sizeof *this, type, txn_id) , n_levels_(0) { }
+        : MdMsg(sizeof *this, type, txn_id) , n_levels_(0), symbol_(symbol) { }
 
     static SnapResponse* read_s(uint8_t* buf, uint32_t bytes) { return MdMsg::read_s<SnapResponse>(buf, bytes); }
 

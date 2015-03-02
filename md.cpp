@@ -55,10 +55,27 @@ public:
             } 
         }
 
-        /* for(action in recorded actions) {
-         *    apply_action(book);
-         * }
-         */
+        auto it = deferred_actions_.find(symbol);
+
+        if(it != deferred_actions_.end()) {
+
+            for(auto& action : it->second) {
+                if(std::get<0>(action) > txn_id) {
+
+                    action_type_t action_type = std::get<1>(action);
+
+                    if(action_type == action_type_t::SUBMIT) {
+                        book.submit(std::get<2>(action), std::get<4>(action), std::get<3>(action));
+                    } else if(action_type == action_type_t::CANCEL) {
+                        book.cancel(std::get<4>(action), std::get<3>(action));
+                    } else /*trade*/ {
+                        book.trade(std::get<4>(action), std::get<3>(action));
+                    }
+                }
+            }
+
+            deferred_actions_.erase(it);
+        }
         
         //std::cerr << "<== snapshot response" << std::endl; 
         snap_sock_.close();
@@ -70,74 +87,55 @@ public:
     inline void on_trade(const std::string& symbol, uint64_t txn_id, uint16_t qty, double price) {  
 
         if(recovering_) {
-            //record trade
-            return;
-        }
-
-        level_book_t& book = get_book(symbol);
-
-        if(txn_id - txn_id_ > 1) {
+            deferred_actions_[symbol].emplace_back(txn_id, action_type_t::TRADE, side_t::NONE, qty, price);
+        } else if(txn_id - txn_id_ > 1) {
             recover(symbol);
-        } else 
-            txn_id_ = txn_id;
-        
-        if(price == book.best_buy())  {
-            book.trade_buy(price, qty);
-        } else {
-            book.trade_sell(price, qty);
-        }
+        } else { 
+            level_book_t& book = get_book(symbol);
 
-        std::cerr << "<== trade symbol <" << symbol << "> txn <" << txn_id << "> qty <" << qty 
-                << "> price <" << price << ">" << std::endl;
+            txn_id_ = txn_id;
+
+            book.trade(price, qty);            
+
+            std::cerr << "<== trade symbol <" << symbol << "> txn <" << txn_id << "> qty <" << qty 
+                    << "> price <" << price << ">" << std::endl;
+        }
     } 
 
     inline void on_cancel(const std::string& symbol, uint64_t txn_id, uint16_t qty, double price) {
 
         if(recovering_) {
-            //record cancel
-            return;
-        }
-
-        level_book_t& book = get_book(symbol);
-
-        if(txn_id - txn_id_ > 1) {
+            deferred_actions_[symbol].emplace_back(txn_id, action_type_t::CANCEL, side_t::NONE, qty, price);
+        } else if(txn_id - txn_id_ > 1) {
             recover(symbol);
-        } else
+        } else {
+            level_book_t& book = get_book(symbol);
+
             txn_id_ = txn_id;
 
-        if(price < book.best_sell())  {
-            book.cancel_buy(price, qty);
-        } else {
-            book.cancel_sell(price, qty);
-        }
+            book.cancel(price, qty);
 
-        std::cerr << "<== cancel symbol <" << symbol << "> txn <" << txn_id << "> qty <" << qty 
-                << "> price <" << price << ">" <<  std::endl;
+            std::cerr << "<== cancel symbol <" << symbol << "> txn <" << txn_id << "> qty <" << qty 
+                    << "> price <" << price << ">" <<  std::endl;
+        }
     }
 
     inline void on_submit(const std::string& symbol, uint64_t txn_id, uint8_t side, uint16_t qty, double price) {
 
         if(recovering_) {
-            //record submit
-            return;
-        }
-
-        level_book_t& book = get_book(symbol);
-
-        if(txn_id - txn_id_ > 1 ) {
+            deferred_actions_[symbol].emplace_back(txn_id, action_type_t::SUBMIT, (side_t)side, qty, price);
+        } else if(txn_id - txn_id_ > 1 ) {
             recover(symbol);
-            return;
-        } else 
+        } else { 
+            level_book_t& book = get_book(symbol);
+
             txn_id_ = txn_id;
 
-        if( (side_t)side == side_t::BUY ) {
-            book.add_buy(price, qty);
-        } else {
-            book.add_sell(price, qty);
-        } 
+            book.submit((side_t)side, price, qty);
 
-        std::cerr << "<== submit symbol <" << symbol << "> txn <" << txn_id << "> side <" << side 
-            << "> qty <" << qty << "> price <" << price << ">" << std::endl;
+            std::cerr << "<== submit symbol <" << symbol << "> txn <" << txn_id << "> side <" << side 
+                << "> qty <" << qty << "> price <" << price << ">" << std::endl;
+        }
     } 
 
     static void recv_cb(void *user_data, uint8_t *buf, uint16_t& bytes) {
@@ -176,7 +174,7 @@ public:
         //std::cerr << "===== received snapshot response ======" << std::endl;
         while(bytes) {
             if((msg = snp = SnapResponse::read_s(buf, bytes))) { 
-                md.on_snapshot(std::string(snp->symbol()), snp->txn_id(), snp->levels());
+                md.on_snapshot(snp->symbol(), snp->txn_id(), snp->levels());
             } else {
                  if((msg = MdMsg::read_s(buf, bytes)) ) {
                     std::cerr << "<== UNKNOWN type <" << msg->get_type() << ">" << std::endl;
@@ -312,6 +310,8 @@ private:
     Autobahn::session s_;
     UdpSocket md_sock_;
     TcpSocket snap_sock_;
+    //std::vector<std::pair<uint64_t, order_action_t>> deferred_actions_;
+    std::unordered_map<std::string, std::vector<std::tuple<uint64_t, action_type_t, side_t, uint32_t, double>>> deferred_actions_;
     std::unordered_map<std::string, level_book_t> books_;
 };
 
