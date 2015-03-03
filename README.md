@@ -10,7 +10,7 @@ web component requires autobahnjs, underscorejs, backbonejs
 python component requires twisted, autobahnpy 
 
 
-
+<pre>
  +------------+               +------+               +---------+         +----+
  | web_ladder | <-websocket-> | wamp | <-websocket-> | wsproxy | <-tcp-> | md | <-udp---+
  +------------+               +------+               +---------+         +----+         |
@@ -22,3 +22,4 @@ python component requires twisted, autobahnpy
      +------------+              |
      | web_ladder | <-websocket--+
      +------------+
+ </pre>
