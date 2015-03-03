@@ -171,7 +171,7 @@ public:
         Md& md = *(Md*)user_data;
         const MdMsg* msg;
         const SnapResponse* snp;
-        //std::cerr << "===== received snapshot response ======" << std::endl;
+        
         while(bytes) {
             if((msg = snp = SnapResponse::read_s(buf, bytes))) { 
                 md.on_snapshot(snp->symbol(), snp->txn_id(), snp->levels());
@@ -191,6 +191,7 @@ public:
 
     void on_new_levels(const level_book_t& book) {
 
+        //std::cerr << " ====== snapshot callback =======" << std::endl;
         if(recovering_)
             return;
 
@@ -203,6 +204,7 @@ public:
 
     void on_level_update(const level_book_t& book, side_t side, uint16_t qty, double price, action_type_t action) {
 
+        //std::cerr << " ====== level update =======" << std::endl;
         if(recovering_)
             return;
 
@@ -217,7 +219,7 @@ public:
             s_.publish("com.simple_cross.submit", {
                 Autobahn::object(book.symbol_), 
                 Autobahn::object(book.book_id_), 
-                Autobahn::object((char)side), 
+                Autobahn::object((uint8_t)side), 
                 Autobahn::object(qty), 
                 Autobahn::object(price)
             }); 
@@ -297,6 +299,8 @@ public:
     void recover(const std::string& symbol) { 
         recovering_ = true;
 
+        s_.publish("com.simple_cross.recover", {Autobahn::object(recovering_)}); 
+
         if( !snap_sock_.connect() )
             std::cerr << "couldn't request snapshot" << std::endl;
         else {
@@ -310,7 +314,6 @@ private:
     Autobahn::session s_;
     UdpSocket md_sock_;
     TcpSocket snap_sock_;
-    //std::vector<std::pair<uint64_t, order_action_t>> deferred_actions_;
     std::unordered_map<std::string, std::vector<std::tuple<uint64_t, action_type_t, side_t, uint32_t, double>>> deferred_actions_;
     std::unordered_map<std::string, level_book_t> books_;
 };

@@ -82,6 +82,10 @@ struct LevelBook {
                 level_update_cb_(*this, side_t::BUY, qty, price, action_type_t::SUBMIT);
                 buys_[lvl].qty_ += qty;
             } else {
+
+                if(buys_[last_idx_s].qty_)
+                    outer_buys_[buys_[last_idx_s].price_] = buys_[last_idx_s].qty_;
+
                 for(int i = last_idx_s; i > lvl; --i) {
                     buys_[i] = buys_[i - 1];
                 }
@@ -117,8 +121,9 @@ struct LevelBook {
                     buys_[last_idx_s].price_ = it->first;
                     buys_[last_idx_s].qty_   = it->second;
 
+                    snapshot_cb_(*this);
+
                     if(it->second) {
-                        snapshot_cb_(*this);
                         outer_buys_.erase(it);
                     }
                 }
@@ -144,6 +149,10 @@ struct LevelBook {
                 level_update_cb_(*this, side_t::SELL, qty, price, action_type_t::SUBMIT);
                 sells_[lvl].qty_ += qty;
             } else {
+
+                if(sells_[last_idx_s].qty_)
+                    outer_sells_[sells_[last_idx_s].price_] = sells_[last_idx_s].qty_;
+
                 for(int i = last_idx_s; i > lvl; --i) {
                     sells_[i] = sells_[i - 1];
                 }
@@ -183,9 +192,10 @@ struct LevelBook {
                     sells_[last_idx_s].price_ = it->first;
                     sells_[last_idx_s].qty_   = it->second;
 
+                    snapshot_cb_(*this);
+
                     if(it->second) {
-                        snapshot_cb_(*this);
-                        outer_buys_.erase(it);
+                        outer_sells_.erase(it);
                     }
                 }
 
