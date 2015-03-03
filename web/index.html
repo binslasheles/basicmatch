@@ -9,6 +9,8 @@
     <link rel="stylesheet" media="screen" href="ladder.css"></link>
 </head>
 <body>
+
+<div id="recovery_flag"></div>
 <div id="main"></div>
 
 <script type="text/javascript">
@@ -51,7 +53,6 @@
             var lvl_idx = Math.floor((this.max - price) * this.ticks_per_handle);
 
             if(!(price in lvls)) {
-                //delete current max
                 lvls[price] = 0;
             }
 
@@ -95,23 +96,6 @@
                 qty    = args[3], 
                 price  = args[4];
 
-            //if(new best bid outside min max) or (new best ask) {
-                //...
-            //}
-            //if(side == bid) {
-            // if( price < 
-            //
-            //
-            //
-            //} else { 
-            //
-            // 
-            // 
-            //}
-            //
-            //
-            //this.max = _.isEmpty(this.sells) ? (_.isEmpty(this.buys) ? this.rows_per_side : (parseInt(_.max(_.keys(this.buys), kf))) + this.offset) : (parseInt(_.min(_.keys(this.sells), kf)) + this.offset - 1);
-
             if( price > this.max || price <= this.min) {
 
                 if(side == 66) {
@@ -131,9 +115,19 @@
             console.log('submit with args', args);
         },
         recover : function(args) {
+            $('#recovery_flag').html('recovering...');
             console.log('recover with args', args);
         },
         snapshot : function(args) {
+            this.initialize({
+                sells : args[2],
+                buys : args[3],
+                txn_id : args[1], 
+                backlog: []
+            });
+
+            $('#recovery_flag').html('');
+            this.render();
             console.log('snapshot with args', args);
         },
         render : function() {
@@ -179,25 +173,20 @@
             console.log('connected');
 
             var backlog = []
-            function handler(evt_id) {
+            function handler(fn_name) {
                 return function(args) {
-                    if( !window.app ) {
-                        backlog.push(args);
+                    if( window.app ) {
+                        window.app[fn_name](args);
                     } else {
-                        switch(evt_id) { //args[0]
-                            case 1 : window.app.cancel(args); break;
-                            case 2 : window.app.submit(args); break;
-                            case 3 : window.app.trade(args); break;
-                            case 4 : window.app.snapshot(args); break;
-                        }
+                        backlog.push(args);
                     } 
                 }
             }
 
-            session.subscribe("com.simple_cross.cancel", handler(1));
-            session.subscribe("com.simple_cross.submit", handler(2));
-            session.subscribe("com.simple_cross.trade", handler(3));
-            session.subscribe("com.simple_cross.snapshot", handler(4)); //levels
+            session.subscribe("com.simple_cross.cancel", handler("cancel"));
+            session.subscribe("com.simple_cross.submit", handler("submit"));
+            session.subscribe("com.simple_cross.trade", handler("trade"));
+            session.subscribe("com.simple_cross.snapshot", handler("snapshot")); //levels
 
             session.call('com.simple_cross.levels', ['IBM']).then(
                 function(res) {
