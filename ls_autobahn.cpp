@@ -618,15 +618,11 @@ void session::call_result(const wamp_msg_t& msg) {
     // [RESULT, CALL.Request|id, Details|dict, YIELD.Arguments|list, YIELD.ArgumentsKw|dict]
 
     if (msg.size() != 3 && msg.size() != 4 && msg.size() != 5) {
-        std::cerr << "invalid RESULT message structure - length must be 3, 4 or 5" << std::endl;
-        return;
-        //throw protocol_error("invalid RESULT message structure - length must be 3, 4 or 5");
+        throw protocol_error("invalid RESULT message structure - length must be 3, 4 or 5");
     }
 
     if (msg[1].type != msgpack::type::POSITIVE_INTEGER) {
-        std::cerr << "invalid RESULT message structure - CALL.Request must be an integer" << std::endl;
-        return;
-        //throw protocol_error("invalid RESULT message structure - CALL.Request must be an integer");
+        throw protocol_error("invalid RESULT message structure - CALL.Request must be an integer");
     }
 
     uint64_t request_id = msg[1].as<uint64_t>();
@@ -634,22 +630,17 @@ void session::call_result(const wamp_msg_t& msg) {
     auto it = calls_.find(request_id);
 
     if ( it == calls_.end()) {
-        //throw protocol_error("bogus RESULT message for non-pending request ID");
-        std::cerr <<  "bogus RESULT message for non-pending request ID" << std::endl;
+        throw protocol_error("bogus RESULT message for non-pending request ID");
     } else {
     
         if (msg[2].type != msgpack::type::MAP) {
-            //throw protocol_error("invalid RESULT message structure - Details must be a dictionary");
-            std::cerr << "invalid RESULT message structure - Details must be a dictionary" << std::endl;
-            return;
+            throw protocol_error("invalid RESULT message structure - Details must be a dictionary");
         }
 
         if (msg.size() > 3) {
 
             if (msg[3].type != msgpack::type::ARRAY) {
-                //throw protocol_error("invalid RESULT message structure - YIELD.Arguments must be a list");
-                std::cerr << "invalid RESULT message structure - YIELD.Arguments must be a list" << std::endl;
-                return;
+                throw protocol_error("invalid RESULT message structure - YIELD.Arguments must be a list");
             }
 
             std::vector<msgpack::object> raw_args;
@@ -702,9 +693,7 @@ void session::subscribe(const std::string& topic, const subscribed_cb_t& cb) {
 template<typename Ept>
 inline void session::provide_impl(const std::string& procedure, const Ept& endpoint) {
     if (!session_id_) {
-        //throw no_session_error();
-        std::cerr <<  "no session id" << std::endl;
-        return;
+        throw no_session_error();
     }
 
     uint64_t request_id = next_request_id();
@@ -748,15 +737,11 @@ void session::registered(const wamp_msg_t& msg) {
 // [REGISTERED, REGISTER.Request|id, Registration|id]
 
     if (msg.size() != 3) {
-        //throw protocol_error("invalid REGISTERED message structure - length must be 3");
-        std::cerr << "invalid REGISTERED message structure - length must be 3" << std::endl;
-        return;
+        throw protocol_error("invalid REGISTERED message structure - length must be 3");
     }
 
     if (msg[1].type != msgpack::type::POSITIVE_INTEGER) {
-        //throw protocol_error("invalid REGISTERED message structure - REGISTERED.Request must be an integer");
-        std::cerr << "invalid REGISTERED message structure - REGISTERED.Request must be an integer" << std::endl;
-        return;
+        throw protocol_error("invalid REGISTERED message structure - REGISTERED.Request must be an integer");
     }
 
     uint64_t request_id = msg[1].as<uint64_t>();
@@ -764,14 +749,11 @@ void session::registered(const wamp_msg_t& msg) {
     auto it = pending_procs_.find(request_id);
 
     if (it == pending_procs_.end()) {
-        //throw protocol_error("bogus REGISTERED message for non-pending request ID");
-        std::cerr << "bogus REGISTERED message for non-pending request ID" << std::endl;
+        throw protocol_error("bogus REGISTERED message for non-pending request ID");
     } else {
 
         if (msg[2].type != msgpack::type::POSITIVE_INTEGER) {
-            //throw protocol_error("invalid REGISTERED message structure - REGISTERED.Registration must be an integer");
-            std::cerr << "invalid REGISTERED message structure - REGISTERED.Registration must be an integer" << std::endl;
-            return;
+            throw protocol_error("invalid REGISTERED message structure - REGISTERED.Registration must be an integer");
         }
 
         uint64_t registration_id = msg[2].as<uint64_t>();
@@ -789,23 +771,17 @@ void session::invoked(const wamp_msg_t& msg) {
     // [INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, CALL.Arguments|list, CALL.ArgumentsKw|dict]
 
     if (msg.size() != 4 && msg.size() != 5 && msg.size() != 6) {
-        //throw protocol_error("invalid INVOCATION message structure - length must be 4, 5 or 6");
-        std::cerr << "invalid INVOCATION message structure - length must be 4, 5 or 6" << std::endl;
-        return;
+        throw protocol_error("invalid INVOCATION message structure - length must be 4, 5 or 6");
     }
 
     if (msg[1].type != msgpack::type::POSITIVE_INTEGER) {
-        //throw protocol_error("invalid INVOCATION message structure - INVOCATION.Request must be an integer");
-        std::cerr << "invalid INVOCATION message structure - INVOCATION.Request must be an integer" << std::endl;
-        return;
+        throw protocol_error("invalid INVOCATION message structure - INVOCATION.Request must be an integer");
     }
 
     uint64_t request_id = msg[1].as<uint64_t>();
 
     if (msg[2].type != msgpack::type::POSITIVE_INTEGER) {
-        //throw protocol_error("invalid INVOCATION message structure - INVOCATION.Registration must be an integer");
-        std::cerr << "invalid INVOCATION message structure - INVOCATION.Registration must be an integer" << std::endl;
-        return;
+        throw protocol_error("invalid INVOCATION message structure - INVOCATION.Registration must be an integer");
     }
 
     uint64_t registration_id = msg[2].as<uint64_t>();
@@ -813,14 +789,11 @@ void session::invoked(const wamp_msg_t& msg) {
     auto it = procs_.find(registration_id);
 
     if ( it == procs_.end()) {
-        //throw protocol_error("bogus INVOCATION message for non-registered registration ID");
-        std::cerr << "bogus INVOCATION message for non-registered registration ID" << std::endl;
+        throw protocol_error("bogus INVOCATION message for non-registered registration ID");
     } else {
 
         if (msg[3].type != msgpack::type::MAP) {
-            //throw protocol_error("invalid INVOCATION message structure - Details must be a dictionary");
-            std::cerr << "invalid INVOCATION message structure - Details must be a dictionary" <<std::endl;
-            return;
+            throw protocol_error("invalid INVOCATION message structure - Details must be a dictionary");
         }
 
         std::vector<msgpack::object> raw_args;
@@ -829,9 +802,7 @@ void session::invoked(const wamp_msg_t& msg) {
         if (msg.size() > 4) {
 
             if (msg[4].type != msgpack::type::ARRAY) {
-                //throw protocol_error("invalid INVOCATION message structure - INVOCATION.Arguments must be a list");
-                std::cerr << "invalid INVOCATION message structure - INVOCATION.Arguments must be a list" << std::endl;
-                return;
+                throw protocol_error("invalid INVOCATION message structure - INVOCATION.Arguments must be a list");
             }
 
             msg[4].convert(&raw_args);
