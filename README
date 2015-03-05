@@ -1,8 +1,8 @@
 usage
 
-make [scross|serialtest]
+make [bmatch|serialtest]
 
-./scross [filename] 
+./bmatch [filename] 
 
 filename defaults to "actions.txt" 
 
