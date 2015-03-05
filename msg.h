@@ -7,7 +7,7 @@
 struct __attribute__((packed)) Msg {
     static Msg* read_s(uint8_t *buf, uint32_t bytes)
     {
-        return *(uint16_t*)buf <= bytes ? (Msg*)(buf) : NULL;
+        return (sizeof(uint16_t) <= bytes) && *(uint16_t*)buf <= bytes ? (Msg*)(buf) : NULL;
     }
 
     const char *get_text() const { return str_; }
@@ -26,7 +26,7 @@ struct __attribute__((packed)) MdMsg {
 
     static MdMsg* read_s(uint8_t* buf, uint16_t bytes) {
         MdMsg* msg = reinterpret_cast<MdMsg*>(buf);
-        return msg->size_ <= bytes ? msg : NULL;
+        return (sizeof(msg->size_) <= bytes) && msg->size_ <= bytes ? msg : NULL;
     }
 
 protected:
@@ -37,7 +37,7 @@ protected:
     template <typename msg_type>
     static msg_type* read_s(uint8_t* buf, uint16_t bytes) {
         MdMsg* msg = reinterpret_cast<MdMsg*>(buf);
-        return msg->size_ <= bytes && msg->type_ == msg_type::type ? reinterpret_cast<msg_type*>(msg) : NULL;
+        return (sizeof(msg->size_) <= bytes) && msg->size_ <= bytes && msg->type_ == msg_type::type ? reinterpret_cast<msg_type*>(msg) : NULL;
     }
 
     uint16_t size_;

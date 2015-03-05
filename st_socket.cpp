@@ -7,7 +7,6 @@
 #include <sys/errno.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <pthread.h>
 #include <cstring>
 #include <unordered_map>
 
@@ -118,7 +117,7 @@ struct Kqueue
 	typedef void (* event_cb_t)(Socket * sock, int error);
 
 	Kqueue() : kqueue_fd_(kqueue()), terminated_(false) 
-        { pthread_mutex_init(&mutex_, NULL); }
+        { }
 
 	bool add_socket(int fd, Socket * sock, event_cb_t sock_cb);
 	bool del_socket(int fd);
@@ -139,7 +138,6 @@ private:
 
 	int kqueue_fd_;
 	bool terminated_;
-    pthread_mutex_t mutex_;
 	std::unordered_map<int, EventData> sockets_; 
 };
 
@@ -147,12 +145,10 @@ static Kqueue kqueue_s;
 
 
 bool Kqueue::add_socket(int fd, Socket * sock, event_cb_t sock_cb) {
-    pthread_mutex_lock(&mutex_);
 	sockets_[fd] = EventData(sock, sock_cb);
 
     struct kevent evt;
     EV_SET(&evt, fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, (void*)&sockets_[fd]); 
-    pthread_mutex_unlock(&mutex_);
 
     return kevent(kqueue_fd_, &evt, 1, NULL, 0, NULL) != -1;
 }
@@ -184,7 +180,7 @@ void Kqueue::loop() {
                     if(!del_socket(evts[i].ident))
                         std::cerr << "failed to delete socket" << std::endl;
 
-                    sockets_.erase(evts[i].ident); //XX RACE CONDITION
+                    sockets_.erase(evts[i].ident);
                 } else {
                     event_data->cb_(event_data->sock_, (evts[i].flags & EV_ERROR) ? evts[i].data : 0);
                 }
