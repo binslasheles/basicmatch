@@ -36,8 +36,8 @@ protected:
 
     template <typename msg_type>
     static msg_type* read_s(uint8_t* buf, uint16_t bytes) {
-        MdMsg* msg = reinterpret_cast<MdMsg*>(buf);
-        return (sizeof(msg->size_) <= bytes) && msg->size_ <= bytes && msg->type_ == msg_type::type ? reinterpret_cast<msg_type*>(msg) : NULL;
+        MdMsg* msg = read_s(buf, bytes);
+        return msg && msg->type_ == msg_type::type ? reinterpret_cast<msg_type*>(msg) : NULL;
     }
 
     uint16_t size_;
