@@ -24,8 +24,11 @@ struct LevelBook {
 
     LevelBook(const std::string& symbol, const level_update_cb_t& level_update_cb, const snapshot_cb_t& snapshot_cb) 
         : book_id_(0), symbol_(symbol),level_update_cb_(level_update_cb), snapshot_cb_(snapshot_cb) {
-        for(uint32_t i = 0; i < t_levels_; ++i)
-            sells_[i] =  {0, std::numeric_limits<double>::infinity()};
+
+        for(uint32_t i = 0; i < t_levels_; ++i) {
+            sells_[i] = {0, std::numeric_limits<double>::infinity()};
+            buys_[i] = {0, -std::numeric_limits<double>::infinity()};
+        }
 
         outer_buys_[-std::numeric_limits<double>::infinity()] = 0;
         outer_sells_[std::numeric_limits<double>::infinity()] = 0;
@@ -43,7 +46,7 @@ struct LevelBook {
         outer_buys_.erase(++outer_buys_.begin(), outer_buys_.end());
         outer_sells_.erase(++outer_sells_.begin(), outer_sells_.end());
 
-        book_id_++;
+        ++book_id_;
     }
 
     const static uint32_t last_idx_s = t_levels_ - 1;
@@ -70,13 +73,13 @@ struct LevelBook {
         } 
     }
 
-    void add_buy(double price, uint32_t qty) {
-        //int lvl = 0;
-        //while(buys_[lvl].price_ > price) ++lvl; 
+    inline void add_buy(double price, uint32_t qty) {
         for(int lvl = 0; lvl < t_levels_; ++lvl) {
 
             if(buys_[lvl].price_ > price)
                 continue;
+
+            ++book_id_;
 
             if(price == buys_[lvl].price_) {
                 level_update_cb_(*this, side_t::BUY, qty, price, action_type_t::SUBMIT);
@@ -93,7 +96,7 @@ struct LevelBook {
                 buys_[lvl] = {qty, price};
                 snapshot_cb_(*this);
             }
-            ++book_id_;
+
             return;
         }
 
@@ -101,11 +104,10 @@ struct LevelBook {
     }
 
     inline void remove_buy(double price, uint32_t qty, action_type_t t) {
-        //int lvl = 0;
-        //while(buys_[lvl].price_ != price) ++lvl; 
-        //
         for(int lvl = 0; lvl < t_levels_; ++lvl) {
             if(buys_[lvl].price_ == price) {
+
+                ++book_id_;
 
                 buys_[lvl].qty_ -= qty;
 
@@ -128,7 +130,6 @@ struct LevelBook {
                     }
                 }
 
-                ++book_id_;
                 return;
             }
         }
@@ -137,13 +138,13 @@ struct LevelBook {
     }
 
     void add_sell(double price, uint32_t qty) {
-        //int lvl = 0;
-        //while(sells_[lvl].price_ < price) ++lvl; 
 
         for(int lvl = 0; lvl < t_levels_; ++lvl) {
 
             if(sells_[lvl].price_ < price)
                continue;
+
+            ++book_id_;
 
             if(price == sells_[lvl].price_) {
                 level_update_cb_(*this, side_t::SELL, qty, price, action_type_t::SUBMIT);
@@ -161,7 +162,6 @@ struct LevelBook {
                 snapshot_cb_(*this);
             }
 
-            ++book_id_;
             return;
         }
 
@@ -169,11 +169,12 @@ struct LevelBook {
     }
 
     inline void remove_sell(double price, uint32_t qty, action_type_t t) {
-        //int lvl = 0;
-        //while(sells_[lvl].price_ != price) ++lvl; 
 
         for(int lvl = 0; lvl < t_levels_; ++lvl) {
             if(sells_[lvl].price_ == price) {
+
+                ++book_id_;
+
                 sells_[lvl].qty_ -= qty;
 
                 if( sells_[lvl].qty_ ) {
@@ -183,10 +184,6 @@ struct LevelBook {
                         sells_[i] = sells_[i + 1];
                     }
 
-                    //sells_[last_idx_s].price_ = std::numeric_limits<double>::infinity(); 
-                    //sells_[last_idx_s].qty_  = 0;
-                    //send_snapshot
-                    //
                     auto it = outer_sells_.begin();
 
                     sells_[last_idx_s].price_ = it->first;
@@ -199,7 +196,6 @@ struct LevelBook {
                     }
                 }
 
-                ++book_id_;
                 return;
             }
         }
@@ -216,10 +212,10 @@ struct LevelBook {
     }
 
     inline void trade(double price, uint32_t qty) {
-        if(price == best_buy())  {
-            remove_buy(price, qty, action_type_t::TRADE);
-        } else {
+        if(price == best_sell())  {
             remove_sell(price, qty, action_type_t::TRADE);
+        } else {
+            remove_buy(price, qty, action_type_t::TRADE);
         }
     }
 
@@ -239,13 +235,9 @@ typedef LevelBook<4> level_book_t;
  *          | 101.00 | 7      |
  *          | 100.00 | 25     |
  *          | 99.00  | 193    |
- *          | 98.00  | depth = 3
+ *          | 98.00  | 
  * |     14 | 97.00  | 0 
  * |      6 | 96.00  | 1
  * |     13 | 95.00  | 2   
- 
- *
- *
- *
  */
 #endif
