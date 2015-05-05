@@ -273,12 +273,13 @@ bool TcpSocket::init() {
         return false;
     } 
 
+    set_reuse();
+
     if( bind(fd_, (struct sockaddr *)&local_addr_.get_sockaddr(), sizeof(struct sockaddr)) < 0 ) {
         std::cerr << "ERROR: FAILED TO BIND" << std::endl;
         return false;
     }
 
-    set_reuse();
     return true;
 }
 
