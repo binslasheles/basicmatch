@@ -1,6 +1,7 @@
 #include "st_socket.h"
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <iostream>
 //#include <sys/epoll.h>
 #include <sys/event.h>
@@ -279,6 +280,11 @@ bool TcpSocket::init() {
         std::cerr << "ERROR: FAILED TO BIND" << std::endl;
         return false;
     }
+
+    int flag = 1;
+    int result = setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, (char *) &flag, sizeof(flag));
+    if (result < 0)
+        std::cerr << "ERROR: FAILED TO DISABLE NAGLE" << std::endl;
 
     return true;
 }
