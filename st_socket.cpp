@@ -18,7 +18,7 @@ void SocketAddr::init(const char * addr_str, uint16_t port) {
     addr_.sin_port        = htons(port_ = port);
     addr_.sin_family      = AF_INET;
 
-    if( addr_str && inet_aton(addr_str, &addr_.sin_addr) == 0 )  
+    if( addr_str && inet_aton(addr_str, &addr_.sin_addr) == 0 )
         std::cerr << "ERROR: BAD ADDRESS" << std::endl;
 }
 
@@ -29,9 +29,9 @@ SocketAddr::SocketAddr() {
 
 
 SocketAddr::SocketAddr(const std::string& addr) {
-    
+
     int pos;
-    if( (pos = addr.find(':')) != std::string::npos  ) { 
+    if( (pos = addr.find(':')) != std::string::npos  ) {
         std::string addr_str = addr.substr(0, pos);
         std::string port_str = addr.substr(pos + 1);
 
@@ -59,8 +59,8 @@ private:
 
 	struct EventData
 	{
-		EventData() : sock_(0), cb_(0) { } 
-		EventData(Socket * sock, event_cb_t cb) : sock_(sock), cb_(cb) { } 
+		EventData() : sock_(0), cb_(0) { }
+		EventData(Socket * sock, event_cb_t cb) : sock_(sock), cb_(cb) { }
 
 		Socket * sock_;
 		event_cb_t cb_;
@@ -69,7 +69,7 @@ private:
 	int epoll_fd_;
 	bool terminated_;
 
-	std::map<int, EventData> sockets_; 
+	std::map<int, EventData> sockets_;
 };
 
 static Epoll epoll_s;
@@ -117,7 +117,7 @@ struct Kqueue
 {
 	typedef void (* event_cb_t)(Socket * sock, int error);
 
-	Kqueue() : kqueue_fd_(kqueue()), terminated_(false) 
+	Kqueue() : kqueue_fd_(kqueue()), terminated_(false)
         { }
 
 	bool add_socket(int fd, Socket * sock, event_cb_t sock_cb);
@@ -130,8 +130,8 @@ private:
 
 	struct EventData
 	{
-		EventData() : sock_(0), cb_(0) { } 
-		EventData(Socket * sock, event_cb_t cb) : sock_(sock), cb_(cb) { } 
+		EventData() : sock_(0), cb_(0) { }
+		EventData(Socket * sock, event_cb_t cb) : sock_(sock), cb_(cb) { }
 
 		Socket * sock_;
 		event_cb_t cb_;
@@ -139,7 +139,7 @@ private:
 
 	int kqueue_fd_;
 	bool terminated_;
-	std::unordered_map<int, EventData> sockets_; 
+	std::unordered_map<int, EventData> sockets_;
 };
 
 static Kqueue kqueue_s;
@@ -149,7 +149,7 @@ bool Kqueue::add_socket(int fd, Socket * sock, event_cb_t sock_cb) {
 	sockets_[fd] = EventData(sock, sock_cb);
 
     struct kevent evt;
-    EV_SET(&evt, fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, (void*)&sockets_[fd]); 
+    EV_SET(&evt, fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, (void*)&sockets_[fd]);
 
     return kevent(kqueue_fd_, &evt, 1, NULL, 0, NULL) != -1;
 }
@@ -157,7 +157,7 @@ bool Kqueue::add_socket(int fd, Socket * sock, event_cb_t sock_cb) {
 
 bool Kqueue::del_socket(int fd) {
     struct kevent evt;
-    EV_SET(&evt, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL); 
+    EV_SET(&evt, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
 
     return kevent(kqueue_fd_, &evt, 1, NULL, 0, NULL) != -1;
 }
@@ -168,7 +168,7 @@ void Kqueue::loop() {
 
 	while( !terminated_ && sockets_.size() ) {
 
-        int nevts = kevent(kqueue_fd_, NULL, 0, evts, sizeof(evts) / sizeof *evts, NULL); 
+        int nevts = kevent(kqueue_fd_, NULL, 0, evts, sizeof(evts) / sizeof *evts, NULL);
 
         if( nevts > 0 ) {
             for(int i = 0; i < nevts; ++i) {
@@ -202,13 +202,13 @@ void Kqueue::stop() {
 
 /****** SOCKET *****/
 
-Socket::Socket(const SocketAddr& local_addr, const SocketAddr& remote_addr) 
-	: fd_(0), recv_buf_size_(32 * 1024), recv_buf_(new uint8_t[recv_buf_size_]), nbytes_(0), 
+Socket::Socket(const SocketAddr& local_addr, const SocketAddr& remote_addr)
+	: fd_(0), recv_buf_size_(32 * 1024), recv_buf_(new uint8_t[recv_buf_size_]), nbytes_(0),
       user_data_(NULL), error_cb_(NULL), local_addr_(local_addr), remote_addr_(remote_addr) { }
 
 Socket::~Socket() {
 
-    if( fd_ != -1 ) { 
+    if( fd_ != -1 ) {
         close();
     }
 
@@ -225,7 +225,7 @@ void Socket::close() {
 TcpSocket::TcpSocket(const SocketAddr& local_addr, const SocketAddr& group_addr)
     : Socket(local_addr, group_addr), accept_cb_(NULL) { }
 
-TcpSocket::TcpSocket(int fd) 
+TcpSocket::TcpSocket(int fd)
 	: Socket(SocketAddr(), SocketAddr()) { fd_ = fd; set_reuse(); kqueue_s.add_socket(fd_, this, Socket::recv_cb); }
 
 int TcpSocket::send(const uint8_t * data, uint16_t size) {
@@ -267,12 +267,12 @@ bool TcpSocket::listen() {
 
 bool TcpSocket::init() {
 
-    fd_ = socket(PF_INET, SOCK_STREAM, 0); 
+    fd_ = socket(PF_INET, SOCK_STREAM, 0);
 
     if( fd_ < 0 ) {
         std::cerr << "ERROR: COULDNT ALLOCATE SOCKET" << std::endl;
         return false;
-    } 
+    }
 
     set_reuse();
 
@@ -294,7 +294,7 @@ void Socket::recv_cb(Socket * socket, int error) {
 	std::cerr << "[+] recv_cb()" << std::endl;
     while( !error && socket->fd_ != -1 ) {
 
-        int nbytes = recv(socket->fd_, socket->recv_buf_ + socket->nbytes_, socket->recv_buf_size_ - socket->nbytes_, MSG_DONTWAIT); 
+        int nbytes = recv(socket->fd_, socket->recv_buf_ + socket->nbytes_, socket->recv_buf_size_ - socket->nbytes_, MSG_DONTWAIT);
 
         if( nbytes > 0 )
         {
@@ -321,7 +321,7 @@ void Socket::recv_cb(Socket * socket, int error) {
     }
 
     if(error && socket->error_cb_)
-        socket->error_cb_(socket->user_data_, error == 1234 ? 0 : error); 
+        socket->error_cb_(socket->user_data_, error == 1234 ? 0 : error);
 
 	std::cerr << "[-] recv_cb()" << std::endl;
 }
@@ -370,7 +370,7 @@ int UdpSocket::send(const uint8_t* data, uint16_t size) {
 
 void Socket::set_reuse() {
     int flag = 1;
-    if( setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag)) < 0 )   
+    if( setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag)) < 0 )
         std::cerr << "Failed to set reuse addr" << std::endl;
 }
 
@@ -383,7 +383,7 @@ bool UdpSocket::init_send() {
 
         const struct sockaddr_in& s = local_addr_.get_sockaddr();
 
-        if( setsockopt(fd_, IPPROTO_IP, IP_MULTICAST_IF, &s.sin_addr.s_addr, sizeof(s.sin_addr.s_addr) ) < 0 )   
+        if( setsockopt(fd_, IPPROTO_IP, IP_MULTICAST_IF, &s.sin_addr.s_addr, sizeof(s.sin_addr.s_addr) ) < 0 )
             std::cerr << "Failed to set send iface for multicast" << std::endl;
         else if(setsockopt(fd_, IPPROTO_IP, IP_MULTICAST_TTL, &ttl_, sizeof(ttl_)) < 0)
             std::cerr << "Failed to set TTL" << std::endl;
@@ -428,7 +428,7 @@ void test_error(void * user_data, int error) {
 }
 
 void test_recv(void * user_data, uint8_t* buf, uint16_t& bytes) {
-    std::cout << "bytes <" << bytes << "> : " 
+    std::cout << "bytes <" << bytes << "> : "
         << std::string((const char*)buf, bytes) << std::endl;
     bytes = 0;
 }
@@ -443,7 +443,7 @@ int main() {
     if( s.init_recv() ) {
         std::cerr << "=== READY TO START RECEIVING ===" << std::endl;
 
-        s.set_recv_cb(nullptr, test_recv); 
+        s.set_recv_cb(nullptr, test_recv);
 
         Socket::start_recv_loop_s();
     }
@@ -455,7 +455,7 @@ int main() {
         int bytes = sprintf(buf, "== %d == ", i++);
         if( !s.send((uint8_t*)buf, bytes + 1) )
             std::cerr << "EEEEEEEER" << std::endl;
-            
+
         usleep(1000 * 1000);
     }
     TcpSocket s(SocketAddr("192.168.1.104:5555"), SocketAddr());

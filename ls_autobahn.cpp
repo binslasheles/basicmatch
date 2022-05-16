@@ -22,13 +22,13 @@
 
 namespace Autobahn {
 
-session::session(const std::string& remote_addr,  const std::string& realm, const join_cb_t& jcb, const session_end_cb_t& secb) 
+session::session(const std::string& remote_addr,  const std::string& realm, const join_cb_t& jcb, const session_end_cb_t& secb)
     : buf_(256), packer_(&buf_), jcb_(jcb), secb_(secb), sock_(SocketAddr(), SocketAddr(remote_addr)), realm_(realm) {
 
     sock_.set_recv_cb(this, Autobahn::session::recv_cb);
     sock_.set_error_cb(Autobahn::session::error_cb);
 
-    if( sock_.connect() ) 
+    if( sock_.connect() )
         join();
     else
         std::cerr << "ERROR: failed to connect to <" << remote_addr << ">. session not started" << std::endl;
@@ -121,7 +121,7 @@ void session::recv_cb(void * user_data, uint8_t * buf, uint16_t & bytes) {
     uint32_t msg_size = 0;
 
     while( !s.stopped_ && bytes >= sizeof(msg_size) ) {
-        msg_size = ntohl(*(uint32_t*)buf); 
+        msg_size = ntohl(*(uint32_t*)buf);
 
         if( bytes < msg_size ) {
             break;
@@ -134,7 +134,7 @@ void session::recv_cb(void * user_data, uint8_t * buf, uint16_t & bytes) {
         }
     }
 
-    if(s.stopped_) 
+    if(s.stopped_)
         bytes = 0;
 }
 
@@ -166,7 +166,7 @@ void session::subscribed(const wamp_msg_t& msg) {
         uint64_t subscription_id = msg[2].as<uint64_t>();
 
         subscriptions_.emplace(std::piecewise_construct,
-            std::forward_as_tuple(subscription_id), 
+            std::forward_as_tuple(subscription_id),
             std::forward_as_tuple(it->second)
         );
 
@@ -322,7 +322,7 @@ void session::error(const wamp_msg_t& msg) {
             throw protocol_error("bogus ERROR message for non-pending CALL request ID");
         }
     } break;
-    
+
 
     // FIXME: handle other error messages
     default:
@@ -495,7 +495,7 @@ bool session::prepare_call(const std::string& rp, uint32_t addl, const called_cb
 
     uint64_t request_id = next_request_id();
 
-    calls_.emplace(std::piecewise_construct, 
+    calls_.emplace(std::piecewise_construct,
         std::forward_as_tuple(request_id),
         std::forward_as_tuple(cb)
     );
@@ -510,7 +510,7 @@ bool session::prepare_call(const std::string& rp, uint32_t addl, const called_cb
     return true;
 }
 
-inline 
+inline
 void pack_vec(msgpack::packer<buffer>& packer, const std::vector<object>& vecargs ) {
 
     packer.pack_array(vecargs.size());
@@ -519,7 +519,7 @@ void pack_vec(msgpack::packer<buffer>& packer, const std::vector<object>& vecarg
         packer.pack(obj);
 }
 
-inline 
+inline
 void pack_map(msgpack::packer<buffer>& packer, const std::map<std::string, object>& mapargs ) {
 
     packer.pack_map(mapargs.size());
@@ -541,18 +541,18 @@ void session::call(const std::string& rp, const std::vector<object>& vecargs, co
         call(rp, cb);
     else if( prepare_call(rp, 1, cb) ) {
 
-        pack_vec(packer_, vecargs);        
+        pack_vec(packer_, vecargs);
 
         send();
     }
 }
 
-void session::call(const std::string& rp, const std::vector<object>& vecargs, const std::map<std::string, object>& mapargs, 
+void session::call(const std::string& rp, const std::vector<object>& vecargs, const std::map<std::string, object>& mapargs,
     const called_cb_t& cb) {
     if( !mapargs.size() )
         call(rp, vecargs, cb);
     else if( prepare_call(rp, 2, cb) ) {
-        
+
         pack_vec(packer_, vecargs);
         pack_map(packer_, mapargs);
 
@@ -585,7 +585,7 @@ bool session::prepare_publish(const std::string& topic, uint32_t addl) {
 }
 
 void session::publish(const std::string& topic) {
-    if( prepare_publish(topic, 0) )   
+    if( prepare_publish(topic, 0) )
         send();
 }
 
@@ -593,7 +593,7 @@ void session::publish(const std::string& topic, const std::vector<object>& vecar
     if( !vecargs.size() )
         publish(topic);
     else if (prepare_publish(topic, 1) ) {
-        pack_vec(packer_, vecargs);        
+        pack_vec(packer_, vecargs);
 
         send();
     }
@@ -632,7 +632,7 @@ void session::call_result(const wamp_msg_t& msg) {
     if ( it == calls_.end()) {
         throw protocol_error("bogus RESULT message for non-pending request ID");
     } else {
-    
+
         if (msg[2].type != msgpack::type::MAP) {
             throw protocol_error("invalid RESULT message structure - Details must be a dictionary");
         }
@@ -673,14 +673,14 @@ void session::subscribe(const std::string& topic, const subscribed_cb_t& cb) {
         std::cerr << "error: no session id" << std::endl;
         return;
     }
-    
+
     uint64_t request_id = next_request_id();
 
-    pending_subscriptions_.emplace(std::piecewise_construct, 
-        std::forward_as_tuple(request_id), 
+    pending_subscriptions_.emplace(std::piecewise_construct,
+        std::forward_as_tuple(request_id),
         std::forward_as_tuple(cb)
     );
-        
+
     packer_.pack_array(4);
     packer_.pack(static_cast<int> (msg_code::SUBSCRIBE));
     packer_.pack(request_id);
@@ -700,8 +700,8 @@ inline void session::provide_impl(const std::string& procedure, const Ept& endpo
 
     std::unique_ptr<delegate_base> handler(new Ept(endpoint));
 
-    pending_procs_.emplace(std::piecewise_construct, 
-        std::forward_as_tuple(request_id), 
+    pending_procs_.emplace(std::piecewise_construct,
+        std::forward_as_tuple(request_id),
         std::forward_as_tuple(std::move(handler))
     );
 
@@ -830,8 +830,8 @@ void session::invoked(const wamp_msg_t& msg) {
                packer_.pack(request_id);
                packer_.pack_map(0);
                packer_.pack_array(1);
-               packer_.pack( 
-                   (*(endpoint_t*)delegate_base)(raw_args, raw_kwargs)   
+               packer_.pack(
+                   (*(endpoint_t*)delegate_base)(raw_args, raw_kwargs)
                );
                send();
 
@@ -850,7 +850,7 @@ void session::invoked(const wamp_msg_t& msg) {
                pack_vec(packer_, (*(endpoint_v_t*)delegate_base)(raw_args, raw_kwargs));
                send();
 
-            } else if( typeid(*delegate_base) == typeid(endpoint_m_t)) { 
+            } else if( typeid(*delegate_base) == typeid(endpoint_m_t)) {
 
 
                 packer_.pack_array(5);
@@ -861,7 +861,7 @@ void session::invoked(const wamp_msg_t& msg) {
                 pack_map(packer_, (*(endpoint_m_t*)delegate_base)(raw_args, raw_kwargs));
                 send();
 
-            } else if( typeid(*delegate_base) == typeid(endpoint_vm_t)) { 
+            } else if( typeid(*delegate_base) == typeid(endpoint_vm_t)) {
 
                //if (m_debug) {
                //   std::cerr << "Invoking endpoint registered under " << registration_id << " as of type endpoint_fvm_t" << std::endl;

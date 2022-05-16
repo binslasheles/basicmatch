@@ -5,7 +5,7 @@
 #include <assert.h>
 
 
-bool Serializer::deserialize(const std::string& line, order_action_t& a) 
+bool Serializer::deserialize(const std::string& line, order_action_t& a)
 {
     if (line.size())
     {
@@ -14,7 +14,7 @@ bool Serializer::deserialize(const std::string& line, order_action_t& a)
             if (std::regex_match(line, m_, submit_fmt_) && m_[5] != ".")//regex allows "."
             {
                 a.type_ = action_type_t::SUBMIT;
-                a.order_info_.qty_   = (uint32_t)std::stoi(m_[4]); 
+                a.order_info_.qty_   = (uint32_t)std::stoi(m_[4]);
                 a.order_info_.id_    = (uint32_t)std::stoi(m_[1]);
                 a.order_info_.side_  = ((m_[3] == "B") ? side_t::BUY : side_t::SELL);
                 a.order_info_.price_ = std::stod(m_[5]);

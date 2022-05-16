@@ -12,10 +12,10 @@
 #include "st_socket.h"
 #include "msg.h"
 
-/* BasicMatch is the driver for decoupled 
- * engine/matching logic and raw input deserialization. 
+/* BasicMatch is the driver for decoupled
+ * engine/matching logic and raw input deserialization.
  * support for multiple input formats (possibly simultaneously)
- * only requires more/different serializers 
+ * only requires more/different serializers
  *
  *
  * in all classes, minimize explicit memory allocation,
@@ -25,8 +25,8 @@
 class BasicMatch;
 
 struct Client {
-    Client(uint32_t id, BasicMatch& sc, Socket* sock, bool is_snap_request) 
-        : sc_(sc), id_(id), is_snap_request_(is_snap_request), sock_(sock) 
+    Client(uint32_t id, BasicMatch& sc, Socket* sock, bool is_snap_request)
+        : sc_(sc), id_(id), is_snap_request_(is_snap_request), sock_(sock)
     {
         if( is_snap_request )
             sock_->set_recv_cb(this, snap_request_recv_cb);
@@ -34,11 +34,11 @@ struct Client {
             sock_->set_recv_cb(this, recv_cb);
 
         sock_->set_error_cb(err_cb);
-    } 
+    }
 
     static void err_cb(void* user_data, int err) {
         std::cerr << "err on client connect <" << err << "> " << strerror(err) << std::endl;
-    } 
+    }
 
     static void recv_cb(void *user_data, uint8_t *buf, uint16_t& bytes);
     static void snap_request_recv_cb(void *user_data, uint8_t *buf, uint16_t& bytes);
@@ -51,9 +51,9 @@ struct Client {
 
 class BasicMatch {
 public:
-    BasicMatch(const std::string& listen_addr, const std::string& snap_request_listen_addr, const std::string& md_send_addr) 
-        : engine_({this, &BasicMatch::on_fill}, {this, &BasicMatch::on_submit}, {this, &BasicMatch::on_cancel}), 
-          client_acceptor_(listen_addr, SocketAddr()), snap_request_acceptor_(snap_request_listen_addr, SocketAddr()), md_sock_(SocketAddr(), md_send_addr) { 
+    BasicMatch(const std::string& listen_addr, const std::string& snap_request_listen_addr, const std::string& md_send_addr)
+        : engine_({this, &BasicMatch::on_fill}, {this, &BasicMatch::on_submit}, {this, &BasicMatch::on_cancel}),
+          client_acceptor_(listen_addr, SocketAddr()), snap_request_acceptor_(snap_request_listen_addr, SocketAddr()), md_sock_(SocketAddr(), md_send_addr) {
 
         client_acceptor_.set_accept_cb(this, &BasicMatch::client_accept_cb);
         snap_request_acceptor_.set_accept_cb(this, &BasicMatch::snap_request_accept_cb);
@@ -64,21 +64,21 @@ public:
             std::cerr << "failed to start listing for snapshot requests" << std::endl;
         else if(!md_sock_.init_send())
             std::cerr << "failed to open muliticast socket for sending market data" << std::endl;
-        else 
+        else
             std::cerr << "construction complete" << std::endl;
     }
 
-    void on_fill(const std::string& symbol, uint64_t txn_id, uint16_t qty, double price) { 
-        send(md_sock_, Trade(txn_id, qty, price, symbol.c_str())); 
+    void on_fill(const std::string& symbol, uint64_t txn_id, uint16_t qty, double price) {
+        send(md_sock_, Trade(txn_id, qty, price, symbol.c_str()));
     }
 
     void on_submit(const std::string& symbol, uint64_t txn_id, uint32_t id,  side_t side, uint16_t qty, double price) {
-        send(md_sock_, Submit(txn_id, id, qty, price, (uint8_t)side, symbol.c_str())); 
-    } 
+        send(md_sock_, Submit(txn_id, id, qty, price, (uint8_t)side, symbol.c_str()));
+    }
 
     void on_cancel(const std::string& symbol, uint64_t txn_id, uint16_t qty, double price) {
-        send(md_sock_, Cancel(txn_id, qty, price, symbol.c_str())); 
-    } 
+        send(md_sock_, Cancel(txn_id, qty, price, symbol.c_str()));
+    }
 
     void handle_msg(const Msg& msg) {
         results_t results = action(msg.get_text());
@@ -90,8 +90,8 @@ public:
     inline void add_conn(Socket* raw, bool is_snap_request) {
         uint32_t id = clId_++;
 
-        clients_.emplace(std::piecewise_construct, 
-            std::forward_as_tuple(id), 
+        clients_.emplace(std::piecewise_construct,
+            std::forward_as_tuple(id),
             std::forward_as_tuple(id, *this, raw, is_snap_request)
         );
     }
@@ -116,11 +116,11 @@ public:
         clients_.erase(clId);
     }
 
-    //parse input 
-    //feed to engine  
+    //parse input
+    //feed to engine
     //format engine output
     //
-    results_t action(const std::string& line) { 
+    results_t action(const std::string& line) {
         order_action_t a;
         if (!serializer_.deserialize(line, a))
             return (serializer_.serialize(a));
@@ -128,7 +128,7 @@ public:
         results_.clear();
 
         if (engine_.execute(a, results_) > 0)
-            return (serializer_.serialize(results_)); 
+            return (serializer_.serialize(results_));
         return (results_t());
     }
 
@@ -141,7 +141,7 @@ public:
         SnapResponse snap(book.txn_id_, symbol);
 
         //XXX create level object, with list and cumm qty to avoid the inner loops
-        
+
         uint16_t i = 0;
         for (auto it = book.sells_.rbegin(); it != book.sells_.rend() && i < levels; ++it, ++i) {
             uint32_t cumm_qty = 0;
@@ -149,7 +149,7 @@ public:
             for (auto& o : it->second)
                 cumm_qty += o.qty_;
 
-            snap.add_level(side_t::SELL, cumm_qty, it->first); 
+            snap.add_level(side_t::SELL, cumm_qty, it->first);
         }
 
         i = 0;
@@ -159,7 +159,7 @@ public:
             for (auto& o : it->second)
                 cumm_qty += o.qty_;
 
-            snap.add_level(side_t::BUY, cumm_qty, it->first); 
+            snap.add_level(side_t::BUY, cumm_qty, it->first);
         }
 
         send(*static_cast<TcpSocket*>(requestor.sock_.get()), snap);
@@ -206,7 +206,7 @@ void Client::snap_request_recv_cb(void *user_data, uint8_t *buf, uint16_t& bytes
     const SnapRequest* req;
 
     while(bytes) {
-        if((msg = req = SnapRequest::read_s(buf, bytes))) { 
+        if((msg = req = SnapRequest::read_s(buf, bytes))) {
             bmatch.handle_snap_request(cl, req->symbol(), req->levels());
             //bmatch.remove_client(cl.id_);
         } else {
@@ -224,7 +224,7 @@ void Client::snap_request_recv_cb(void *user_data, uint8_t *buf, uint16_t& bytes
 }
 
 
-//main function takes command line argument as file name to try to read 
+//main function takes command line argument as file name to try to read
 int main(int argc, char **argv) {
                         //client accept addr  //md send addr
     BasicMatch bmatch("192.168.1.104:6677", "192.168.1.104:6678", "237.3.1.2:11111");

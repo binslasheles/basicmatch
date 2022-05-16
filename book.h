@@ -9,13 +9,13 @@
 
 struct Book {
     //lists allow insertion and deletion of previous
-    //and prior elements without invalidating existing 
+    //and prior elements without invalidating existing
     //iterators, o(1) push_back and pop_front provide
     //queue properties
     typedef std::list<order_info_t> level_t;
 
-    //exported, allows clients to remove 
-    //order from level in o(1), however removal of 
+    //exported, allows clients to remove
+    //order from level in o(1), however removal of
     //level itself (if empty) will be log(n) due to
     //containing map
     typedef level_t::iterator order_ref_t;
@@ -23,10 +23,10 @@ struct Book {
     Book()=default;
     Book(const std::string& symbol) : symbol_(symbol), txn_id_(1) { }
 
-    inline void add_order(const order_info_t& ord, std::unordered_map<uint32_t, order_ref_t>& orders) { 
+    inline void add_order(const order_info_t& ord, std::unordered_map<uint32_t, order_ref_t>& orders) {
         level_t& level = (ord.side_ == side_t::BUY) ? buys_[ord.price_] : sells_[ord.price_];
-        level.push_back(ord); 
-        orders[ord.id_] = --level.end(); 
+        level.push_back(ord);
+        orders[ord.id_] = --level.end();
     }
 
     void dump(std::vector<order_action_t>& info);
@@ -37,18 +37,18 @@ struct Book {
     std::string symbol_;
 
     uint64_t txn_id_;
-    //frequent iteration in key magnitude order, prefer not to pay for sort at each 
+    //frequent iteration in key magnitude order, prefer not to pay for sort at each
     //iteration time so use tree-map (uses default compare std::less)
     std::map<double, level_t> sells_;
 
-    //frequent iteration in reverse key magnitude order, 
-    //prefer not to pay for sort at each iteration time so use tree-map 
+    //frequent iteration in reverse key magnitude order,
+    //prefer not to pay for sort at each iteration time so use tree-map
     //with reversed comparison function
     std::map<double, level_t, std::greater<double>> buys_;
 private:
     template <typename T>
     inline void remove_order(T& levels, order_ref_t& it) {
-        typename T::iterator lit = levels.find(it->price_); 
+        typename T::iterator lit = levels.find(it->price_);
 
         lit->second.erase(it);
 

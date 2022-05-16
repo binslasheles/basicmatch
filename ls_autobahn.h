@@ -11,18 +11,18 @@
 #include <functional>
 #include <iostream>
 
-namespace Autobahn { 
+namespace Autobahn {
 
 struct buffer {
 
     buffer(uint32_t bytes) : bufsize_(bytes + sizeof(uint32_t)), buf_((char*)::malloc(bufsize_)) { clear(); }
 
-    ~buffer() { ::free(buf_); } 
+    ~buffer() { ::free(buf_); }
 
     inline uint32_t& header()      { return *(uint32_t*)buf_; }
     inline uint8_t*  serial_ptr()  { return (uint8_t*)buf_; }
 
-    inline uint32_t  serial_size() { return in_ - buf_; } 
+    inline uint32_t  serial_size() { return in_ - buf_; }
     inline uint32_t  data_size()   { return serial_size() - sizeof(uint32_t); }
 
     inline void clear() { in_ = buf_ + sizeof(uint32_t); }
@@ -65,18 +65,18 @@ struct session {
 
     void subscribe(const std::string& topic, const subscribed_cb_t& handler);
 
-    void call(const std::string& remote, 
+    void call(const std::string& remote,
               const called_cb_t& cb);
 
-    void call(const std::string& remote, 
-              const std::vector<object>&, 
+    void call(const std::string& remote,
+              const std::vector<object>&,
               const called_cb_t& cb);
 
-    void call(const std::string& remote, 
-              const std::vector<object>&, 
-              const std::map<std::string, object>&, 
+    void call(const std::string& remote,
+              const std::vector<object>&,
+              const std::map<std::string, object>&,
               const called_cb_t& cb);
-              
+
 
     void provide(const std::string& procedure, const endpoint_t&   endpoint);
     void provide(const std::string& procedure, const endpoint_v_t&  endpoint);
@@ -123,8 +123,8 @@ private:
 
     void     send();
     void     parse_msg(uint8_t * buf, uint32_t msg_size);
-    void     handle_msg(const object& obj); 
-    void     subscribed(const wamp_msg_t& msg); 
+    void     handle_msg(const object& obj);
+    void     subscribed(const wamp_msg_t& msg);
     void     event(const wamp_msg_t& msg);
     void     goodbye(const wamp_msg_t& msg);
     void     call_result(const wamp_msg_t& msg);

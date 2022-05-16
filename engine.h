@@ -21,7 +21,7 @@ class Engine
 public:
 
     Engine()=default;
-    Engine(const fill_cb_t& fill_cb, const submit_cb_t& submit_cb, const cancel_cb_t& cancel_cb) : fill_cb_(fill_cb), submit_cb_(submit_cb), cancel_cb_(cancel_cb) { } 
+    Engine(const fill_cb_t& fill_cb, const submit_cb_t& submit_cb, const cancel_cb_t& cancel_cb) : fill_cb_(fill_cb), submit_cb_(submit_cb), cancel_cb_(cancel_cb) { }
 
     uint32_t execute(order_action_t o, std::vector<order_action_t>&);
     inline book_t& get_book(const char *symbol) {
@@ -29,7 +29,7 @@ public:
             books_.emplace(std::piecewise_construct, std::forward_as_tuple(symbol), std::forward_as_tuple(symbol));
 
         return (books_[symbol]);
-    } 
+    }
 
 private:
     void fill(order_info_t& small, order_info_t& large, double price, uint64_t txn_id,
@@ -48,10 +48,10 @@ private:
 
     //no sorting requirement, want amortized o(1) lookup, insertion
     //so prefer hash-set to tree-set
-    std::unordered_set<uint32_t> completed_orders_; 
+    std::unordered_set<uint32_t> completed_orders_;
 
     //no sorting requirement, want amortized o(1) lookup so prefer hash-map
-    //keep iterator to order instead of ptr for o(1) removal from 
+    //keep iterator to order instead of ptr for o(1) removal from
     //containing level (list)
     std::unordered_map<uint32_t, book_t::order_ref_t> orders_;
 

@@ -22,7 +22,7 @@ struct LevelBook {
 
     LevelBook()=default;
 
-    LevelBook(const std::string& symbol, const level_update_cb_t& level_update_cb, const snapshot_cb_t& snapshot_cb) 
+    LevelBook(const std::string& symbol, const level_update_cb_t& level_update_cb, const snapshot_cb_t& snapshot_cb)
         : book_id_(0), symbol_(symbol),level_update_cb_(level_update_cb), snapshot_cb_(snapshot_cb) {
 
         for(uint32_t i = 0; i < t_levels_; ++i) {
@@ -33,7 +33,7 @@ struct LevelBook {
         outer_buys_[-std::numeric_limits<double>::infinity()] = 0;
         outer_sells_[std::numeric_limits<double>::infinity()] = 0;
     }
- 
+
 
     inline uint32_t levels() const { return t_levels_; }
 
@@ -67,10 +67,10 @@ struct LevelBook {
         std::cerr << "===================" << std::endl;
         for(int i = t_levels_ - 1; i >= 0; --i) {
             std::cerr << sells_[i].qty_ << "@" <<  sells_[i].price_ <<  std::endl;
-        } 
+        }
         for(int i = 0; i < t_levels_; ++i) {
             std::cerr << buys_[i].qty_ << "@" <<  buys_[i].price_ <<  std::endl;
-        } 
+        }
     }
 
     inline void add_buy(double price, uint32_t qty) {
@@ -208,7 +208,7 @@ struct LevelBook {
             add_buy(price, qty);
         } else {
             add_sell(price, qty);
-        } 
+        }
     }
 
     inline void trade(double price, uint32_t qty) {
@@ -235,9 +235,9 @@ typedef LevelBook<4> level_book_t;
  *          | 101.00 | 7      |
  *          | 100.00 | 25     |
  *          | 99.00  | 193    |
- *          | 98.00  | 
- * |     14 | 97.00  | 0 
+ *          | 98.00  |
+ * |     14 | 97.00  | 0
  * |      6 | 96.00  | 1
- * |     13 | 95.00  | 2   
+ * |     13 | 95.00  | 2
  */
 #endif

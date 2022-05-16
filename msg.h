@@ -13,7 +13,7 @@ struct __attribute__((packed)) Msg {
     const char *get_text() const { return str_; }
     uint16_t get_size() const { return size_; }
 private:
-    uint16_t size_; 
+    uint16_t size_;
     char str_[];//null
 };
 
@@ -57,7 +57,7 @@ struct fixed_str {
     fixed_str(const char* s) { strncpy(buf_, s, t_size_); buf_[t_size_] = 0; }
     fixed_str(const std::string& s) { strncpy(buf_, s.c_str(), t_size_); buf_[t_size_] = 0; }
 
-    operator const char*() const { return buf_; } 
+    operator const char*() const { return buf_; }
     char buf_[t_size_ + 1];
 };
 
@@ -66,13 +66,13 @@ struct __attribute__((packed)) Trade : public MdMsg {
 
     Trade() : MdMsg(sizeof *this, type, 0) { }
 
-    Trade(uint64_t txn_id, uint16_t qty, double price, const char* symbol) 
+    Trade(uint64_t txn_id, uint16_t qty, double price, const char* symbol)
         : MdMsg(sizeof *this, type, txn_id), qty_(qty), price_(price), symbol_(symbol) { }
 
     static Trade* read_s(uint8_t* buf, uint32_t bytes) { return MdMsg::read_s<Trade>(buf, bytes); }
 
-    uint16_t qty() const { return qty_; } 
-    double price() const { return price_; } 
+    uint16_t qty() const { return qty_; }
+    double price() const { return price_; }
     const char* symbol() const { return symbol_; }
 
 private:
@@ -89,15 +89,15 @@ struct __attribute__((packed)) Submit : public MdMsg {
 
     Submit() : MdMsg(sizeof *this, type, 0) { }
 
-    Submit(uint64_t txn_id, uint32_t id, uint16_t qty, double price, uint8_t side, const char* symbol) 
-        : MdMsg(sizeof *this, type, txn_id), id_(id), qty_(qty), price_(price), side_(side), symbol_(symbol) 
+    Submit(uint64_t txn_id, uint32_t id, uint16_t qty, double price, uint8_t side, const char* symbol)
+        : MdMsg(sizeof *this, type, txn_id), id_(id), qty_(qty), price_(price), side_(side), symbol_(symbol)
     { unused_ = 0; }
 
     static Submit* read_s(uint8_t* buf, uint32_t bytes) { return MdMsg::read_s<Submit>(buf, bytes); }
 
-    uint16_t qty() const { return qty_; } 
-    double price() const { return price_; } 
-    uint32_t id()  const { return id_; } 
+    uint16_t qty() const { return qty_; }
+    double price() const { return price_; }
+    uint32_t id()  const { return id_; }
     uint8_t side() const { return side_; }
     const char* symbol() const { return symbol_; }
 
@@ -118,12 +118,12 @@ struct __attribute__((packed)) Cancel : public MdMsg {
 
     Cancel() : MdMsg(sizeof *this, type, 0) { }
 
-    Cancel(uint64_t txn_id, uint16_t qty, double price, const char* symbol) 
+    Cancel(uint64_t txn_id, uint16_t qty, double price, const char* symbol)
         : MdMsg(sizeof *this, type, txn_id), qty_(qty), price_(price), symbol_(symbol) { }
 
     static Cancel* read_s(uint8_t* buf, uint32_t bytes) { return MdMsg::read_s<Cancel>(buf, bytes); }
 
-    uint16_t qty() const { return qty_; } 
+    uint16_t qty() const { return qty_; }
     double price() const { return price_; }
     const char* symbol() const { return symbol_; }
 
@@ -141,7 +141,7 @@ struct __attribute__((packed)) SnapRequest : public MdMsg {
 
     SnapRequest() : MdMsg(sizeof *this, type, 0), levels_(0) { }
 
-    SnapRequest(const char* symbol, uint16_t levels) 
+    SnapRequest(const char* symbol, uint16_t levels)
         : MdMsg(sizeof *this, type, 0), levels_(levels), symbol_(symbol)  { }
 
     static SnapRequest* read_s(uint8_t* buf, uint32_t bytes) { return MdMsg::read_s<SnapRequest>(buf, bytes); }
@@ -171,14 +171,14 @@ struct __attribute__((packed)) SnapResponse : public MdMsg {
 
     SnapResponse() : MdMsg(sizeof *this, type, 0), n_levels_(0) { }
 
-    SnapResponse(uint64_t txn_id, const char* symbol) 
+    SnapResponse(uint64_t txn_id, const char* symbol)
         : MdMsg(sizeof *this, type, txn_id) , n_levels_(0), symbol_(symbol) { }
 
     static SnapResponse* read_s(uint8_t* buf, uint32_t bytes) { return MdMsg::read_s<SnapResponse>(buf, bytes); }
 
     const char* symbol() const { return symbol_; }
 
-    //if cursor is null, returns 
+    //if cursor is null, returns
     /*void add_level(Level*& cursor, side_t side, uint16_t qty, double price) {
         if(!cursor) {
             cursor = reinterpret_cast<Level*>(buf_);
@@ -188,9 +188,9 @@ struct __attribute__((packed)) SnapResponse : public MdMsg {
 
         if( reinterpret_cast<uint8_t*>(cursor) < buf_ + sizeof(buf_) ) {
             cursor->side_ = side_t::NONE;
-        } 
-    }*/ 
-    
+        }
+    }*/
+
     bool add_level(side_t side, uint32_t qty, double price) {
 
         if(n_levels_ < MAX_LEVELS) {

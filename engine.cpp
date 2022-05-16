@@ -11,12 +11,12 @@ void Engine::match(order_info_t& o, Levels& levels, uint64_t& txn_id, std::vecto
         if (!o.qty_ || !o.crosses(level_price))
             break;
 
-        Book::level_t& level = it->second; 
+        Book::level_t& level = it->second;
 
         while (o.qty_) {
             order_info_t& resting = level.front();
             if (o.qty_ < resting.qty_) {//o complete, resting partial fills
-            
+
                 fill(o, resting, level_price, txn_id++, results);
                 return;
             }
@@ -69,7 +69,7 @@ void Engine::handle_submit(order_info_t& o, std::vector<order_action_t>& results
             match(o, book.sells_, book.txn_id_, results);
         else
             match(o, book.buys_, book.txn_id_, results);
-        
+
         if (o.qty_) {
             book.add_order(o, orders_);
             submit_cb_(o.symbol_, book.txn_id_++, o.id_, o.side_, o.qty_, o.price_);
@@ -77,7 +77,7 @@ void Engine::handle_submit(order_info_t& o, std::vector<order_action_t>& results
     }
 }
 
-void Engine::fill(order_info_t& small, order_info_t& large, double fill_price, uint64_t txn_id, 
+void Engine::fill(order_info_t& small, order_info_t& large, double fill_price, uint64_t txn_id,
         std::vector<order_action_t>& results)
 {
     uint16_t fill_qty = small.qty_;
@@ -104,19 +104,19 @@ void Engine::fill(order_info_t& small, order_info_t& large, double fill_price, u
         books_.emplace(std::piecewise_construct, std::forward_as_tuple(symbol), std::forward_as_tuple(symbol));
 
     return (books_[symbol]);
-}*/ 
+}*/
 
-uint32_t Engine::execute(order_action_t action, std::vector<order_action_t>& results) { 
-    if (action.type_ == action_type_t::SUBMIT) 
+uint32_t Engine::execute(order_action_t action, std::vector<order_action_t>& results) {
+    if (action.type_ == action_type_t::SUBMIT)
         handle_submit(action.order_info_, results);
     else if (action.type_ == action_type_t::CANCEL)
         handle_cancel(action.order_info_.id_, results);
     else if (action.type_ == action_type_t::PRINT) {
         for (auto& book_pair : books_) {
-            book_pair.second.dump(results); 
+            book_pair.second.dump(results);
         }
     }
-    else 
+    else
         assert(0 && "invalid action type in Engine::match");
 
     return (results.size());

@@ -25,16 +25,16 @@ private:
 class Socket
 {
 public:
-	typedef void (* recv_cb_t)(void * user_data, uint8_t * buf, uint16_t& bytes); 
+	typedef void (* recv_cb_t)(void * user_data, uint8_t * buf, uint16_t& bytes);
     typedef void (* accept_cb_t)(void * user_data, Socket * new_sock);
     typedef void (* error_cb_t)(void * user_data, int error);
 
     virtual ~Socket();
 
-    void set_recv_cb(void * user_data, recv_cb_t user_cb) 
+    void set_recv_cb(void * user_data, recv_cb_t user_cb)
         { user_cb_ = user_cb; user_data_ = user_data; }
 
-    void set_error_cb(error_cb_t error_cb) 
+    void set_error_cb(error_cb_t error_cb)
         { error_cb_ = error_cb; }
 
     void close();
@@ -53,7 +53,7 @@ protected:
 
 	int         fd_;
     uint16_t    recv_buf_size_;
-    uint8_t *   recv_buf_;  
+    uint8_t *   recv_buf_;
     uint16_t    nbytes_;
 
 	void *      user_data_;
@@ -68,7 +68,7 @@ class TcpSocket : public Socket {
 public:
     TcpSocket(const SocketAddr& local_addr, const SocketAddr& remote_addr);
 
-    void set_accept_cb(void * user_data, accept_cb_t accept_cb) 
+    void set_accept_cb(void * user_data, accept_cb_t accept_cb)
         { accept_cb_ = accept_cb; user_data_ = user_data; }
 
 	int send(const uint8_t * data, uint16_t size);
