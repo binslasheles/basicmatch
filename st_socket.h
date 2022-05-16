@@ -1,5 +1,4 @@
-#ifndef _ST_SOCKET_H_
-#define _ST_SOCKET_H_
+#pragma once
 
 #include <netinet/in.h>
 #include <cstdlib>
@@ -97,5 +96,3 @@ public:
 private:
     int ttl_ = 32;
 };
-
-#endif
